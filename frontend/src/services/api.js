@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api",
+  baseURL: "https://scriptahub-backend.onrender.com/api",
 });
 
 api.interceptors.request.use(
@@ -27,7 +27,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh");
         if (!refreshToken) throw new Error("No refresh token");
 
-        const res = await axios.post("http://127.0.0.1:8000/api/auth/refresh/", {
+        const res = await axios.post("https://scriptahub-backend.onrender.com/api/auth/refresh/", {
           refresh: refreshToken,
         });
 
