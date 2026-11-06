@@ -18,18 +18,12 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // Log exactly what we're sending
-    console.log("LOGIN ATTEMPT:", { email: email.trim(), password: password.length, role });
-
     try {
       const res = await api.post("/auth/login/", { 
         email: email.trim(), 
         password: password.trim(), 
         role 
       });
-
-      console.log("LOGIN RESPONSE:", res.data);
 
       if (res.data.verification_required) {
         setShowVerify(true);
@@ -46,7 +40,6 @@ export default function Login() {
         }
       }
     } catch (err) {
-      console.log("LOGIN ERROR:", err.response?.data);
       const errorMsg = err.response?.data?.detail?.[0] || err.response?.data?.detail || "Invalid email or password";
       toast.error(errorMsg);
     } finally {
