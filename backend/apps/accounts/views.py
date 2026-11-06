@@ -50,7 +50,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 raise serializers.ValidationError({"detail": "Mentor profile not found."})
 
         # --- BYPASS LOGIC ---
-        bypass_emails = ["olaosegbaj@gmail.com"]
+        bypass_emails = ["olaosegbaj@gmail.com", "admin@scriptahub.com"]
         is_company_pro = self.user.email.endswith("@scriptahub.com")
         
         if actual_role == "admin" or is_company_pro or self.user.email in bypass_emails:
@@ -116,17 +116,8 @@ class RegisterView(generics.CreateAPIView):
                 )
             
             if user.role in ["student", "mentor"]:
-                code = ''.join(random.choices(string.digits, k=6))
-                user.verification_code = code
+                user.email_verified = True
                 user.save()
-                
-                send_mail(
-                    'ScriptaHub - Verify Your Email',
-                    f'Hello {user.username},\n\nYour verification code is: {code}\n\nEnter this code on the verification page to activate your account.\n\nBest,\nScriptaHub Team',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=True,
-                )
 
             return Response({
                 "user": UserSerializer(user).data,
@@ -146,40 +137,37 @@ class MeView(generics.RetrieveUpdateAPIView):
         user.save()
         return user
 
+    def retrieve(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = UserSerializer(user).data
+        
+        data["student_profile"] = None
+        data["writer_profile"] = None
+        
+        try:
+            data["student_profile"] = {
+                "institution": user.student_profile.institution,
+                "level": user.student_profile.level,
+            }
+        except:
+            pass
+        
+        try:
+            data["writer_profile"] = {
+                "verified": user.writer_profile.verified,
+                "specialization": user.writer_profile.specialization,
+            }
+        except:
+            pass
+        
+        return Response(data)
+
     def update(self, request, *args, **kwargs):
         user = self.get_object()
-        
-        if "username" in request.data and request.data["username"] != user.username:
-            user.username = request.data["username"]
-            user.save()
-        
-        if "email" in request.data and request.data["email"] != user.email:
-            new_email = request.data["email"]
-            if User.objects.filter(email=new_email).exists():
-                return Response({"error": "This email is already in use."}, status=400)
-            
-            code = ''.join(random.choices(string.digits, k=6))
-            user.pending_email = new_email
-            user.verification_code = code
-            user.save()
-            
-            send_mail(
-                'ScriptaHub - Confirm Email Change',
-                f'Hello {user.username},\n\nA request was made to change your ScriptaHub email to: {new_email}\n\nYour verification code is: {code}\n\nEnter this code on the verification page to confirm the change.\n\nIf you did not request this, ignore this email and your email will NOT be changed.\n\nBest,\nScriptaHub Team',
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=True,
-            )
-            return Response({
-                "message": "Verification code sent to your current email.",
-                "email_change_pending": True,
-                "old_email": user.email
-            })
-        
+        if "username" in request.data: user.username = request.data["username"]
+        if "email" in request.data: user.email = request.data["email"]
         if "password" in request.data and request.data["password"]:
             user.set_password(request.data["password"])
-            user.save()
-        
         user.save()
         return Response(UserSerializer(user).data)
 

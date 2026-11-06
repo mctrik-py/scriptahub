@@ -11,6 +11,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showVerify, setShowVerify] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -23,35 +25,57 @@ export default function Login() {
         role 
       });
 
-      console.log("LOGIN SUCCESS:", res.data);
+      console.log("LOGIN RESPONSE:", res.data);
 
-      // Save tokens
-      if (res.data.access) {
+      // Case 1: Verification required
+      if (res.data.verification_required) {
+        setShowVerify(true);
+        toast.success("Verification code sent to your email.");
+        return;
+      }
+
+      // Case 2: Tokens returned directly
+      if (res.data.access && res.data.refresh) {
         localStorage.setItem("access", res.data.access);
-      }
-      if (res.data.refresh) {
         localStorage.setItem("refresh", res.data.refresh);
+        
+        const userRole = res.data.role || role;
+        toast.success("Welcome back!");
+        
+        setTimeout(() => {
+          if (userRole === "admin") navigate("/admin/dashboard");
+          else if (userRole === "mentor") navigate("/mentor/dashboard");
+          else navigate("/student/dashboard");
+        }, 100);
+        return;
       }
 
-      toast.success("Welcome back!");
-
-      // Determine role from response OR from the requested role
-      const userRole = res.data.role || role;
-      console.log("NAVIGATING TO:", userRole);
-
-      if (userRole === "admin") {
-        navigate("/admin/dashboard");
-      } else if (userRole === "mentor") {
-        navigate("/mentor/dashboard");
-      } else {
-        navigate("/student/dashboard");
-      }
+      toast.error("Unexpected response from server.");
     } catch (err) {
       console.log("LOGIN ERROR:", err.response?.data);
-      const errorMsg = err.response?.data?.detail?.[0] || err.response?.data?.detail || "Invalid email or password";
-      toast.error(typeof errorMsg === "string" ? errorMsg : "Invalid email or password");
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail[0] : detail || "Invalid email or password";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyLogin = async () => {
+    try {
+      const res = await api.post("/auth/confirm-login/", { email, code: verifyCode });
+      localStorage.setItem("access", res.data.tokens.access);
+      localStorage.setItem("refresh", res.data.tokens.refresh);
+      
+      toast.success("Login successful!");
+      const userRole = res.data.role || role;
+      setTimeout(() => {
+        if (userRole === "admin") navigate("/admin/dashboard");
+        else if (userRole === "mentor") navigate("/mentor/dashboard");
+        else navigate("/student/dashboard");
+      }, 100);
+    } catch (err) {
+      toast.error("Invalid verification code.");
     }
   };
 
@@ -70,13 +94,22 @@ export default function Login() {
 
           <div className="mt-5 space-y-3">
             <button type="button" onClick={() => setRole("student")}
-              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border transition ${role === "student" ? "border-accent bg-surface2" : "border-border hover:border-neutral-600"}`}>
-              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border"><GraduationCap size={22} /></div>
+              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border-2 transition ${
+                role === "student" ? "border-accent bg-surface2" : "border-border hover:border-accent/50"
+              }`}>
+              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border">
+                <GraduationCap size={22} className={role === "student" ? "text-accent" : "text-ink"} />
+              </div>
               <div><div className="font-medium">I'm a student</div><div className="text-muted text-sm">Get guidance on your project</div></div>
             </button>
+            
             <button type="button" onClick={() => setRole("mentor")}
-              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border transition ${role === "mentor" ? "border-accent bg-surface2" : "border-border hover:border-neutral-600"}`}>
-              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border"><UserCog size={22} /></div>
+              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border-2 transition ${
+                role === "mentor" ? "border-accent bg-surface2" : "border-border hover:border-accent/50"
+              }`}>
+              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border">
+                <UserCog size={22} className={role === "mentor" ? "text-accent" : "text-ink"} />
+              </div>
               <div><div className="font-medium">I'm a mentor</div><div className="text-muted text-sm">Verified writers and developers</div></div>
             </button>
           </div>
@@ -84,13 +117,13 @@ export default function Login() {
           <form onSubmit={handleSubmit} autoComplete="off" noValidate className="mt-6 space-y-3">
             <label className="block">
               <span className="text-xs text-muted">Email</span>
-              <input type="email" name="email_input" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
+              <input type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-ink placeholder:text-neutral-500 focus:outline-none focus:border-accent" />
             </label>
             <label className="block">
               <span className="text-xs text-muted">Password</span>
               <div className="relative mt-1">
-                <input type={showPassword ? "text" : "password"} name="password_input" required placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)}
+                <input type={showPassword ? "text" : "password"} required placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 pr-12 text-ink placeholder:text-neutral-500 focus:outline-none focus:border-accent" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3.5 text-muted hover:text-ink">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -108,6 +141,18 @@ export default function Login() {
         </div>
         <p className="text-center text-muted text-sm mt-4">Don't have an account? <Link to="/signup" className="text-ink underline">Sign up</Link></p>
       </div>
+
+      {showVerify && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="card w-full max-w-md text-center">
+            <h2 className="text-xl font-semibold mb-2">Verify Login</h2>
+            <p className="text-sm text-muted mb-4">We sent a 6-digit code to <strong className="text-ink">{email}</strong>.</p>
+            <input type="text" value={verifyCode} onChange={(e) => setVerifyCode(e.target.value)} placeholder="123456" maxLength={6}
+              className="w-full text-center text-2xl tracking-widest bg-surface2 border border-border rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-accent mb-4" />
+            <button onClick={handleVerifyLogin} className="btn-primary w-full">Confirm Login</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
