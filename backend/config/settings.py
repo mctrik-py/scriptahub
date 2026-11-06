@@ -114,7 +114,9 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# ---- CORS (Hardcoded - No environment override) ----
+# ---- CORS ----
+CORS_ALLOW_ALL_ORIGINS = True  # Temporary - fixes all origins for testing
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -122,20 +124,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-
-# Allow all headers (for debugging)
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-]
 
 # Custom User Model
 AUTH_USER_MODEL = "accounts.User"
