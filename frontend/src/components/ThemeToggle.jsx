@@ -10,11 +10,16 @@ export default function ThemeToggle() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
   };
 
   return (
-    <button onClick={toggleTheme} className="p-2 rounded-xl text-muted hover:text-ink bg-surface border border-border transition">
+    <button 
+      onClick={toggleTheme} 
+      className="p-2 rounded-xl text-muted hover:text-ink bg-surface border border-border transition"
+      aria-label="Toggle theme"
+    >
       {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
     </button>
   );
