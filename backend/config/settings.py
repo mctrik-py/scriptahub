@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-123")
 DEBUG = os.getenv("DEBUG", "True") == "True"
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -69,16 +70,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ---- PostgreSQL ----
+# ---- Database (supports both local and Render PostgreSQL) ----
+import dj_database_url
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "thesishub"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-    }
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:5432/thesishub"),
+        conn_max_age=600,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -93,7 +92,10 @@ TIME_ZONE = "Africa/Lagos"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---- DRF + JWT ----
@@ -113,10 +115,11 @@ SIMPLE_JWT = {
 }
 
 # ---- CORS ----
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ALLOWED_ORIGINS", 
+    "http://localhost:5173,http://127.0.0.1:5173,https://scriptahub.vercel.app"
+).split(",")
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Custom User Model
@@ -134,28 +137,3 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
 }
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-import dj_database_url
-
-# Railway database
-DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:5432/thesishub"),
-        conn_max_age=600,
-    )
-}
-
-# Static files (WhiteNoise)
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# Allowed hosts
-ALLOWED_HOSTS = ["*"]
-
-# CORS (add your Vercel URL later)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-# Static files
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
