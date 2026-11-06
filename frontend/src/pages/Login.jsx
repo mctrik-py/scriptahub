@@ -18,15 +18,23 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // Log exactly what we're sending
+    console.log("LOGIN ATTEMPT:", { email: email.trim(), password: password.length, role });
+
     try {
-      const res = await api.post("/auth/login/", { email, password, role });
-      
-      // Check if verification is required
+      const res = await api.post("/auth/login/", { 
+        email: email.trim(), 
+        password: password.trim(), 
+        role 
+      });
+
+      console.log("LOGIN RESPONSE:", res.data);
+
       if (res.data.verification_required) {
         setShowVerify(true);
         toast.success("Verification code sent to your email.");
       } else {
-        // Direct login (Admin, Company Pro, or bypassed email)
         localStorage.setItem("access", res.data.access);
         localStorage.setItem("refresh", res.data.refresh);
         toast.success("Welcome back!");
@@ -38,6 +46,7 @@ export default function Login() {
         }
       }
     } catch (err) {
+      console.log("LOGIN ERROR:", err.response?.data);
       const errorMsg = err.response?.data?.detail?.[0] || err.response?.data?.detail || "Invalid email or password";
       toast.error(errorMsg);
     } finally {
@@ -116,12 +125,11 @@ export default function Login() {
         <p className="text-center text-muted text-sm mt-4">Don't have an account? <Link to="/signup" className="text-ink underline">Sign up</Link></p>
       </div>
 
-      {/* Login Verification Modal */}
       {showVerify && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="card w-full max-w-md text-center">
             <h2 className="text-xl font-semibold mb-2">Verify Login</h2>
-            <p className="text-sm text-muted mb-4">We sent a 6-digit code to <strong className="text-ink">{email}</strong>. Enter it below to complete your login.</p>
+            <p className="text-sm text-muted mb-4">We sent a 6-digit code to <strong className="text-ink">{email}</strong>. Enter it below.</p>
             <input type="text" value={verifyCode} onChange={(e) => setVerifyCode(e.target.value)} placeholder="123456" maxLength={6}
               className="w-full text-center text-2xl tracking-widest bg-surface2 border border-border rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-accent mb-4" />
             <button onClick={handleVerifyLogin} className="btn-primary w-full">Confirm Login</button>
