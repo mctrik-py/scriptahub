@@ -98,7 +98,7 @@ export default function Complaint() {
 
   return (
     <div className="min-h-screen bg-bg pb-24">
-      <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="app-container space-y-4">
         <div className="flex items-center justify-between mb-2">
           <button onClick={() => navigate("/student/dashboard")} className="text-muted hover:text-ink">
             <ArrowLeft size={20} />

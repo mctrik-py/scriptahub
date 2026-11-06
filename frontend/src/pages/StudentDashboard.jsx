@@ -116,7 +116,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-bg pb-24 relative">
-      <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="app-container space-y-4">
         
         <div className="card relative">
           

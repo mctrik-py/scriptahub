@@ -52,7 +52,7 @@ export default function Topics() {
 
   return (
     <div className="min-h-screen bg-bg pb-24 relative">
-      <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="app-container space-y-4">
         <div className="card">
           <div className="flex items-center justify-between mb-3 relative">
             <button onClick={() => navigate("/student/dashboard")} className="text-muted hover:text-ink">

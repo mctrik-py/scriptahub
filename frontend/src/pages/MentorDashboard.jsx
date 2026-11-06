@@ -98,7 +98,7 @@ export default function MentorDashboard() {
 
   return (
     <div className="min-h-screen bg-bg pb-24">
-      <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="app-container space-y-4">
         
         {/* Top Bar */}
         <div className="flex items-center justify-between">
