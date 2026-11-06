@@ -11,8 +11,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showVerify, setShowVerify] = useState(false);
-  const [verifyCode, setVerifyCode] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -25,42 +23,35 @@ export default function Login() {
         role 
       });
 
-      if (res.data.verification_required) {
-        setShowVerify(true);
-        toast.success("Verification code sent to your email.");
-      } else {
+      console.log("LOGIN SUCCESS:", res.data);
+
+      // Save tokens
+      if (res.data.access) {
         localStorage.setItem("access", res.data.access);
+      }
+      if (res.data.refresh) {
         localStorage.setItem("refresh", res.data.refresh);
-        toast.success("Welcome back!");
-        
-        if (res.data.role === "admin") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate(res.data.role === "mentor" ? "/mentor/dashboard" : "/student/dashboard");
-        }
+      }
+
+      toast.success("Welcome back!");
+
+      // Determine role from response OR from the requested role
+      const userRole = res.data.role || role;
+      console.log("NAVIGATING TO:", userRole);
+
+      if (userRole === "admin") {
+        navigate("/admin/dashboard");
+      } else if (userRole === "mentor") {
+        navigate("/mentor/dashboard");
+      } else {
+        navigate("/student/dashboard");
       }
     } catch (err) {
+      console.log("LOGIN ERROR:", err.response?.data);
       const errorMsg = err.response?.data?.detail?.[0] || err.response?.data?.detail || "Invalid email or password";
-      toast.error(errorMsg);
+      toast.error(typeof errorMsg === "string" ? errorMsg : "Invalid email or password");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleVerifyLogin = async () => {
-    try {
-      const res = await api.post("/auth/confirm-login/", { email, code: verifyCode });
-      localStorage.setItem("access", res.data.tokens.access);
-      localStorage.setItem("refresh", res.data.tokens.refresh);
-      
-      toast.success("Login successful!");
-      if (res.data.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        navigate(res.data.role === "mentor" ? "/mentor/dashboard" : "/student/dashboard");
-      }
-    } catch (err) {
-      toast.error("Invalid verification code.");
     }
   };
 
@@ -117,18 +108,6 @@ export default function Login() {
         </div>
         <p className="text-center text-muted text-sm mt-4">Don't have an account? <Link to="/signup" className="text-ink underline">Sign up</Link></p>
       </div>
-
-      {showVerify && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="card w-full max-w-md text-center">
-            <h2 className="text-xl font-semibold mb-2">Verify Login</h2>
-            <p className="text-sm text-muted mb-4">We sent a 6-digit code to <strong className="text-ink">{email}</strong>. Enter it below.</p>
-            <input type="text" value={verifyCode} onChange={(e) => setVerifyCode(e.target.value)} placeholder="123456" maxLength={6}
-              className="w-full text-center text-2xl tracking-widest bg-surface2 border border-border rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-accent mb-4" />
-            <button onClick={handleVerifyLogin} className="btn-primary w-full">Confirm Login</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
