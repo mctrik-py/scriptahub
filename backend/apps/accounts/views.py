@@ -370,3 +370,10 @@ class BroadcastView(APIView):
         for user in users:
             Notification.objects.create(user=user, title=title, message=message)
         return Response({"message": "Announcement sent to all users."})
+class MarkNotificationsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Mark all unread notifications as read
+        request.user.notifications.filter(is_read=False).update(is_read=True)
+        return Response({"status": "success", "message": "All notifications marked as read."})

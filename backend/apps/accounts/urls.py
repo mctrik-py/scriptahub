@@ -5,7 +5,8 @@ from .views import (
     CustomTokenObtainPairView, PasswordResetRequestView,
     VerifyEmailView, ConfirmEmailChangeView, ConfirmLoginView,
     AdminUserListView, ApproveMentorView, RejectMentorView, 
-    DeactivateUserView, AdminRevenueView, BroadcastView
+    DeactivateUserView, AdminRevenueView, BroadcastView,
+    MarkNotificationsReadView,
 )
 
 urlpatterns = [
@@ -14,6 +15,7 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('me/', MeView.as_view(), name='auth_me'),
     path('notifications/', NotificationListView.as_view(), name='notifications'),
+    path('notifications/mark-read/', MarkNotificationsReadView.as_view(), name='mark-notifications-read'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     path('confirm-email-change/', ConfirmEmailChangeView.as_view(), name='confirm-email-change'),

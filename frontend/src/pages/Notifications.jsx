@@ -13,13 +13,22 @@ export default function Notifications() {
     const fetchNotifs = async () => {
       try {
         const token = localStorage.getItem("access");
+        
+        // Fetch user role to know where to go back
         const userRes = await api.get("/auth/me/", { headers: { Authorization: `Bearer ${token}` } });
         setRole(userRes.data.role);
 
+        // Fetch notifications
         const res = await api.get("/auth/notifications/", {
           headers: { Authorization: `Bearer ${token}` }
         });
         setNotifications(res.data);
+
+        // Mark them as read in the backend
+        await api.post("/auth/notifications/mark-read/", {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
       } catch (err) {
         console.error(err);
       } finally {

@@ -25,7 +25,7 @@ export default function SignUp() {
     if (role === "student") {
       const lvl = parseInt(form.level);
       if (isNaN(lvl) || lvl < 100 || lvl > 800) {
-        return toast.error("Level must be a number between 100 and 800 (e.g., 400).");
+        return toast.error("Level must be a number between 100 and 800.");
       }
     }
 
@@ -50,14 +50,11 @@ export default function SignUp() {
         headers: { "Content-Type": "multipart/form-data" }
       });
       
-      // DO NOT auto-login. Store email in localStorage for the verify page
       localStorage.setItem("pending_email", form.email);
-      
       toast.success("Check your email for a verification code.");
       navigate("/verify-email");
       
     } catch (err) {
-      console.error(err.response?.data);
       toast.error(err.response?.data?.error || err.response?.data?.email?.[0] || "Registration failed.");
     } finally {
       setLoading(false);
@@ -77,14 +74,33 @@ export default function SignUp() {
           
           <div className="mt-5 space-y-3">
             <button type="button" onClick={() => setRole("student")}
-              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border transition ${role === "student" ? "border-accent bg-surface2" : "border-border hover:border-neutral-600"}`}>
-              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border"><GraduationCap size={22} /></div>
-              <div><div className="font-medium">I'm a student</div><div className="text-muted text-sm">Get guidance on your project</div></div>
+              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border-2 transition ${
+                role === "student" 
+                  ? "border-accent bg-surface2" 
+                  : "border-border hover:border-accent/50"
+              }`}>
+              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border">
+                <GraduationCap size={22} className={role === "student" ? "text-accent" : "text-ink"} />
+              </div>
+              <div>
+                <div className="font-medium">I'm a student</div>
+                <div className="text-muted text-sm">Get guidance on your project</div>
+              </div>
             </button>
+            
             <button type="button" onClick={() => setRole("mentor")}
-              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border transition ${role === "mentor" ? "border-accent bg-surface2" : "border-border hover:border-neutral-600"}`}>
-              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border"><UserCog size={22} /></div>
-              <div><div className="font-medium">I'm a mentor</div><div className="text-muted text-sm">Verified writers and developers</div></div>
+              className={`w-full text-left flex gap-3 items-center p-4 rounded-2xl border-2 transition ${
+                role === "mentor" 
+                  ? "border-accent bg-surface2" 
+                  : "border-border hover:border-accent/50"
+              }`}>
+              <div className="w-10 h-10 grid place-items-center rounded-xl bg-black/40 border border-border">
+                <UserCog size={22} className={role === "mentor" ? "text-accent" : "text-ink"} />
+              </div>
+              <div>
+                <div className="font-medium">I'm a mentor</div>
+                <div className="text-muted text-sm">Verified writers and developers</div>
+              </div>
             </button>
           </div>
 
