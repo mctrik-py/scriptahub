@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Send, Upload, FileText, Trash2, ExternalLink, Edit2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowLeft, Send, Upload, FileText, Trash2, ExternalLink, Edit2, Mic } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -14,10 +14,15 @@ export default function MentorProjectDetail() {
   const [statusUpdate, setStatusUpdate] = useState("");
   const [editingMsg, setEditingMsg] = useState(null);
   const [editText, setEditText] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const chatEndRef = useRef(null);
 
   const fetchProject = async () => {
     try {
       const token = localStorage.getItem("access");
+      const userRes = await api.get("/auth/me/", { headers: { Authorization: `Bearer ${token}` } });
+      setCurrentUser(userRes.data.username);
+
       const res = await api.get(`/services/engagements/${id}/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -33,6 +38,10 @@ export default function MentorProjectDetail() {
   useEffect(() => {
     fetchProject();
   }, [id]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [project]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -59,12 +68,12 @@ export default function MentorProjectDetail() {
       await api.post(`/services/engagements/${id}/upload/`, formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
       });
-      toast.success("File sent to student!");
+      toast.success("File sent!");
       setFile(null);
       document.getElementById("mentor-file-input").value = "";
       fetchProject();
     } catch (err) {
-      toast.error(err.response?.data?.error || "Upload failed.");
+      toast.error("Upload failed.");
     }
   };
 
@@ -105,90 +114,82 @@ export default function MentorProjectDetail() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case "completed": return "border-success text-success";
-      case "in_progress": return "border-warn text-warn";
-      case "review": return "border-info text-info";
-      default: return "border-border text-muted";
-    }
-  };
-
   if (loading) return <div className="min-h-screen bg-bg p-8 text-center text-muted">Loading...</div>;
   if (!project) return <div className="min-h-screen bg-bg p-8 text-center text-muted">Project not found.</div>;
 
   return (
-    <div className="min-h-screen bg-bg p-4 pb-24">
-      <div className="max-w-md mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/mentor/dashboard")} className="text-muted hover:text-ink"><ArrowLeft size={20} /></button>
-          <h1 className="text-xl font-semibold truncate">{project.title}</h1>
-        </div>
-
-        {/* Project Info */}
-        <div className="card">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-sm font-medium">{project.student_name || "Student"}'s Project</div>
-              <div className="text-xs text-muted mt-1 flex items-center gap-2">
-                Status: 
-                <span className={`chip capitalize ${getStatusColor(project.status)}`}>
-                  {project.status.replace("_", " ")}
-                </span>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-muted">Escrow Value</div>
-              <div className="text-sm font-semibold">₦{(project.total_kobo / 100).toLocaleString()}</div>
+    <div className="min-h-screen bg-bg flex flex-col">
+      <div className="app-container flex-1 flex flex-col pb-4">
+        
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4 pt-2">
+          <button onClick={() => navigate("/mentor/dashboard")} className="text-accent hover:text-white transition">
+            <ArrowLeft size={24} />
+          </button>
+          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">
+            {project.student_name ? project.student_name.charAt(0).toUpperCase() : "S"}
+          </div>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold truncate">{project.student_name || "Student"}</h1>
+            <div className="text-xs text-muted flex items-center gap-1">
+               <span className="capitalize">{project.status.replace("_", " ")}</span>
             </div>
           </div>
-          
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="text-xs font-medium text-muted mb-2">Update Project Progress</div>
-            <div className="flex gap-2">
-              <select value={statusUpdate} onChange={(e) => setStatusUpdate(e.target.value)} className="flex-1 bg-surface2 border border-border rounded-xl px-3 py-2 text-sm text-ink">
-                <option value="requested">Requested</option>
-                <option value="in_progress">In Progress</option>
-                <option value="review">In Review</option>
-                <option value="completed">Completed</option>
-              </select>
-              <button onClick={() => handleUpdateStatus(statusUpdate)} className="btn-primary px-4 py-2 text-sm">Save</button>
-            </div>
-          </div>
+          {/* Status Update Dropdown */}
+          <select value={statusUpdate} onChange={(e) => { setStatusUpdate(e.target.value); handleUpdateStatus(e.target.value); }} className="bg-surface2 border border-border rounded-lg px-2 py-1 text-xs text-ink">
+            <option value="requested">Requested</option>
+            <option value="in_progress">In Progress</option>
+            <option value="review">In Review</option>
+            <option value="completed">Completed</option>
+          </select>
         </div>
 
-        {/* Chat with File Upload */}
-        <div className="card">
-          <div className="text-sm font-medium text-muted mb-3">Chat with {project.student_name || "Student"}</div>
-          <div className="space-y-3 max-h-64 overflow-y-auto mb-3">
-            {project.messages.length === 0 ? <p className="text-xs text-muted text-center">No messages yet.</p> : project.messages.map((msg) => {
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+          {project.messages.length === 0 ? (
+            <p className="text-sm text-muted text-center py-8">No messages yet. Send a message to start!</p>
+          ) : (
+            project.messages.map((msg) => {
+              const isMe = msg.sender_name === currentUser;
               const isFile = msg.message.startsWith("📎 Sent a file:");
               const fileName = isFile ? msg.message.replace("📎 Sent a file:", "").trim() : "";
               const doc = project.documents.find(d => d.original_name === fileName);
-              
-              return (
-                <div key={msg.id} className="bg-surface2 p-2 rounded-lg relative group">
-                  <div className="text-xs font-semibold text-accent">{msg.sender_name}</div>
-                  
-                  {editingMsg === msg.id ? (
-                    <div className="flex gap-2 mt-1">
-                      <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="flex-1 bg-surface border border-border rounded-lg px-2 py-1 text-sm text-ink" />
-                      <button onClick={() => handleEditMessage(msg.id)} className="text-xs bg-success text-white px-2 py-1 rounded">Save</button>
-                      <button onClick={() => setEditingMsg(null)} className="text-xs bg-surface2 border border-border px-2 py-1 rounded">Cancel</button>
-                    </div>
-                  ) : isFile ? (
-                    doc ? (
-                      <a href={doc.file} target="_blank" rel="noreferrer" className="text-info hover:underline flex items-center gap-2 mt-1">
-                        <FileText size={16} /> {doc.original_name} <ExternalLink size={12} />
-                      </a>
-                    ) : (
-                      <div className="text-xs text-muted mt-1 italic">File no longer available</div>
-                    )
-                  ) : (
-                    <div className="text-sm">{msg.message}</div>
-                  )}
 
-                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+              return (
+                <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"} relative group`}>
+                  <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl relative ${
+                    isMe 
+                      ? "bg-accent text-white rounded-br-sm" 
+                      : "bg-surface2 text-ink border border-border rounded-bl-sm"
+                  }`}>
+                    
+                    {editingMsg === msg.id ? (
+                      <div className="flex gap-2">
+                        <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="flex-1 bg-black/20 text-white rounded px-2 py-1 text-sm" />
+                        <button onClick={() => handleEditMessage(msg.id)} className="text-xs bg-success px-2 py-1 rounded">Save</button>
+                        <button onClick={() => setEditingMsg(null)} className="text-xs bg-white/20 px-2 py-1 rounded">Cancel</button>
+                      </div>
+                    ) : isFile ? (
+                      doc ? (
+                        <a href={doc.file} target="_blank" rel="noreferrer" className={`flex items-center gap-2 underline ${isMe ? "text-white" : "text-info"}`}>
+                          <FileText size={16} /> {doc.original_name} <ExternalLink size={12} />
+                        </a>
+                      ) : (
+                        <div className="text-sm italic opacity-70">File no longer available</div>
+                      )
+                    ) : (
+                      <div className="text-[15px] leading-snug">{msg.message}</div>
+                    )}
+                  </div>
+
+                  {/* Timestamp & Read Receipts */}
+                  <div className={`text-[10px] text-muted mt-1 flex items-center gap-1 ${isMe ? "pr-1" : "pl-1"}`}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {isMe && <span className="text-accent">✓✓</span>}
+                  </div>
+
+                  {/* Edit/Delete actions */}
+                  <div className={`absolute top-0 ${isMe ? "-left-12" : "-right-12"} flex gap-2 opacity-0 group-hover:opacity-100 transition bg-bg p-1 rounded-lg`}>
                     {!isFile && (
                       <button onClick={() => { setEditingMsg(msg.id); setEditText(msg.message); }} className="text-muted hover:text-accent"><Edit2 size={14} /></button>
                     )}
@@ -196,27 +197,43 @@ export default function MentorProjectDetail() {
                   </div>
                 </div>
               );
-            })}
-          </div>
-          
-          <form onSubmit={handleSendMessage} className="flex gap-2 mb-2">
-            <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Type a message..." className="flex-1 bg-surface2 border border-border rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:border-accent" />
-            <button type="submit" className="bg-accent text-white p-2 rounded-xl"><Send size={18} /></button>
-          </form>
-
-          <div className="flex gap-2 items-center bg-surface border border-border rounded-xl p-1">
-            <input type="file" id="mentor-file-input" onChange={(e) => setFile(e.target.files[0])} className="hidden" />
-            <button type="button" onClick={() => document.getElementById("mentor-file-input").click()} className="flex-1 text-xs text-muted bg-surface2 py-2 px-3 rounded-lg hover:bg-neutral-800 text-left truncate">
-              {file ? file.name : "Choose a file to upload"}
-            </button>
-            <button onClick={handleUpload} disabled={!file} className={`p-2 rounded-xl ${!file ? "bg-surface2 text-muted" : "bg-accent text-white"}`}>
-              <Upload size={16} />
-            </button>
-          </div>
+            })
+          )}
+          <div ref={chatEndRef} />
         </div>
 
-        {/* Documents List */}
-        <div className="card">
+        {/* Input Area (iMessage style) */}
+        <div className="flex gap-2 items-end bg-surface border border-border rounded-2xl p-1.5">
+          <input type="file" id="mentor-file-input" onChange={(e) => setFile(e.target.files[0])} className="hidden" />
+          <button 
+            type="button" 
+            onClick={() => document.getElementById("mentor-file-input").click()} 
+            className="text-muted hover:text-ink p-2"
+          >
+            <Upload size={22} />
+          </button>
+          
+          <input 
+            type="text" 
+            value={message} 
+            onChange={(e) => setMessage(e.target.value)} 
+            placeholder="Message..." 
+            className="flex-1 bg-transparent text-ink py-2 text-[15px] focus:outline-none" 
+          />
+
+          {message.trim() || file ? (
+            <button onClick={file ? handleUpload : handleSendMessage} className="bg-accent text-white p-2 rounded-full mb-0.5">
+              <Send size={16} className="-ml-0.5" />
+            </button>
+          ) : (
+            <button className="text-muted hover:text-ink p-2">
+              <Mic size={22} />
+            </button>
+          )}
+        </div>
+
+        {/* Project Documents (below the chat) */}
+        <div className="card mt-6">
           <div className="text-sm font-medium text-muted mb-3">Project Documents</div>
           <div className="space-y-2">
             {project.documents.length === 0 ? <p className="text-xs text-muted">No documents uploaded yet.</p> : project.documents.map((doc) => (
