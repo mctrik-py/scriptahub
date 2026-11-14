@@ -26,6 +26,7 @@ from .views import (
     GroupDeleteView,
     GroupListByProjectView,
     GroupChatMessageView,
+    StudentReopenProjectView,
 )
 
 urlpatterns = [
@@ -44,6 +45,7 @@ urlpatterns = [
     path('match/<int:engagement_id>/', AIMatchView.as_view(), name='ai-match'),
     path('student/assign-mentor/<int:engagement_id>/', StudentAssignMentorView.as_view(), name='student-assign-mentor'),
     path('student/assign-company/<int:engagement_id>/', AutoAssignCompanyView.as_view(), name='student-assign-company'),
+    path('student/reopen/<int:pk>/', StudentReopenProjectView.as_view(), name='student-reopen-project'),
     
     # Groups
     path('groups/create/', GroupCreateView.as_view(), name='group-create'),

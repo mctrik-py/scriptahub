@@ -29,7 +29,15 @@ class EngagementDetailView(generics.RetrieveAPIView):
         if self.request.user.role == "mentor":
             return Engagement.objects.filter(mentor=self.request.user)
         return Engagement.objects.filter(student=self.request.user)
-
+    
+    def retrieve(self, request, *args, **kwargs):
+        # Update last_active whenever a user views a project
+        request.user.last_active = timezone.now()
+        request.user.save()
+        
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 class MentorEngagementListView(generics.ListAPIView):
     serializer_class = EngagementSerializer
     permission_classes = [IsAuthenticated]
@@ -79,26 +87,38 @@ class DocumentUploadView(APIView):
             return Response({"error": "No file uploaded"}, status=400)
         try:
             engagement = Engagement.objects.get(id=engagement_id)
-            upload_result = cloudinary.uploader.upload(file, resource_type="raw", folder="documents")
+            
+            is_audio = file.content_type.startswith("audio/")
+            resource_type = "auto" if is_audio else "raw"
+            
+            upload_result = cloudinary.uploader.upload(file, resource_type=resource_type, folder="documents")
             file_url = upload_result.get("secure_url")
-            doc = Document.objects.create(
-                engagement=engagement,
-                file=file_url,
-                original_name=file.name,
-                uploaded_by=request.user
-            )
+            
+            # If it's NOT audio, save it to the Document model
+            if not is_audio:
+                Document.objects.create(
+                    engagement=engagement,
+                    file=file_url,
+                    original_name=file.name,
+                    uploaded_by=request.user
+                )
+            
+            prefix = "🎤 Voice note:" if is_audio else "📎 Sent a file:"
+            
             msg = ChatMessage.objects.create(
                 engagement=engagement,
                 sender=request.user,
-                message=f"📎 Sent a file: {file.name}"
+                message=f"{prefix} {file.name}"
             )
+            
             other_party = engagement.mentor if request.user == engagement.student else engagement.student
             if other_party:
                 Notification.objects.create(
                     user=other_party,
-                    title="New File Uploaded",
-                    message=f"{request.user.username} uploaded a file: {file.name}"
+                    title="New Message",
+                    message=f"{request.user.username} sent a {'voice note' if is_audio else 'file'}"
                 )
+                
             return Response({"status": "uploaded", "url": file_url, "filename": file.name, "message_id": msg.id}, status=201)
         except Exception as e:
             import traceback
@@ -594,3 +614,31 @@ class GroupChatMessageView(APIView):
             return Response({"status": "sent"})
         except Group.DoesNotExist:
             return Response({"error": "Group not found"}, status=404)
+class StudentReopenProjectView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        try:
+            # Ensure the project belongs to this student
+            engagement = Engagement.objects.get(id=pk, student=request.user)
+            
+            if engagement.status != Engagement.Status.COMPLETED:
+                return Response({"error": "Only completed projects can be reopened."}, status=400)
+            
+            # Change status back to in_progress
+            engagement.status = Engagement.Status.IN_PROGRESS
+            engagement.save()
+            
+            # Notify the mentor
+            if engagement.mentor:
+                Notification.objects.create(
+                    user=engagement.mentor,
+                    title="Project Reopened",
+                    message=f"Student {request.user.username} reopened the project: {engagement.title}."
+                )
+            
+            return Response({"message": "Project reopened successfully."}, status=200)
+        except Engagement.DoesNotExist:
+            return Response({"error": "Project not found"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
