@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://scriptahub-backend.onrender.com/api",
+  baseURL: "http://127.0.0.1:8000/api",
 });
 
 api.interceptors.request.use(
@@ -27,7 +27,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh");
         if (!refreshToken) throw new Error("No refresh token");
 
-        const res = await axios.post("https://scriptahub-backend.onrender.com/api/auth/refresh/", {
+        const res = await axios.post("http://127.0.0.1:8000/api/auth/refresh/", {
           refresh: refreshToken,
         });
 
@@ -45,5 +45,14 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ---- Site settings helpers (shared by FindWriter + AdminDashboard) ----
+export const getPublicSettings = () => api.get("/auth/settings/public/");
+
+export const toggleFindWriter = (find_writer_enabled, find_writer_message) =>
+  api.patch("/auth/settings/admin/toggle-find-writer/", {
+    find_writer_enabled,
+    ...(find_writer_message !== undefined ? { find_writer_message } : {}),
+  });
 
 export default api;

@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [complaints, setComplaints] = useState([]);
   const [revenue, setRevenue] = useState(null);
+  const [findWriterEnabled, setFindWriterEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [openSection, setOpenSection] = useState(null); 
@@ -31,6 +32,10 @@ export default function AdminDashboard() {
 
       const revRes = await api.get("/auth/admin/revenue/", { headers });
       setRevenue(revRes.data);
+
+      const settingsRes = await api.get("/auth/platform/settings/", { headers });
+      setFindWriterEnabled(settingsRes.data.find_writer_enabled);
+
     } catch (err) {
       console.error("Admin fetch error:", err.response?.data);
       toast.error("Failed to load admin data");
@@ -75,17 +80,6 @@ export default function AdminDashboard() {
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to reject mentor");
-    }
-  };
-
-  const handleToggleUser = async (id, isActive) => {
-    try {
-      const token = localStorage.getItem("access");
-      await api.post(`/auth/admin/deactivate-user/${id}/`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success(isActive ? "User deactivated" : "User activated");
-      fetchData();
-    } catch (err) {
-      toast.error("Failed to update user");
     }
   };
 
@@ -135,11 +129,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleFindWriter = async () => {
+    try {
+      const token = localStorage.getItem("access");
+      const res = await api.post("/auth/admin/toggle-find-writer/", {}, { headers: { Authorization: `Bearer ${token}` } });
+      setFindWriterEnabled(res.data.find_writer_enabled);
+      toast.success(res.data.find_writer_enabled ? "Find a Writer Enabled" : "Find a Writer Disabled");
+    } catch (err) {
+      toast.error("Failed to toggle setting");
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-bg p-8 text-center text-muted">Loading Admin...</div>;
 
   const pendingMentors = users.filter(u => u.role === "mentor" && !u.is_verified && !u.is_rejected);
-  const approvedMentors = users.filter(u => u.role === "mentor" && u.is_verified);
   const rejectedMentors = users.filter(u => u.role === "mentor" && u.is_rejected);
+  const approvedMentors = users.filter(u => u.role === "mentor" && u.is_verified);
 
   return (
     <div className="min-h-screen bg-bg p-4 pb-24">
@@ -166,6 +171,23 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Platform Controls */}
+        <div className="card border-accent">
+          <div className="font-medium text-sm text-muted mb-3">Platform Controls</div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-ink">Find a Writer</div>
+              <div className="text-xs text-muted">Allow students to request public mentors</div>
+            </div>
+            <button 
+              onClick={handleToggleFindWriter}
+              className={`w-12 h-6 rounded-full transition-colors relative ${findWriterEnabled ? "bg-success" : "bg-surface2 border border-border"}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${findWriterEnabled ? "left-7" : "left-1"}`} />
+            </button>
+          </div>
+        </div>
+
         {/* 1. Pending Mentors */}
         <div className="card">
           <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleSection("mentors")}>
@@ -180,6 +202,7 @@ export default function AdminDashboard() {
                     <div className="font-medium text-sm">{m.username}</div>
                     <div className="text-xs text-muted">{m.email}</div>
                   </div>
+                  
                   <div className="flex gap-2">
                     <button onClick={() => setSelectedMentor(m)} className="text-xs px-2 py-1 border border-border rounded">View Doc</button>
                     <button onClick={() => handleApproveMentor(m.id)} className="text-xs px-2 py-1 bg-success text-white rounded">Approve</button>
@@ -205,9 +228,7 @@ export default function AdminDashboard() {
                     <div className="font-medium text-sm">{m.username}</div>
                     <div className="text-xs text-muted">{m.email}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-success flex items-center gap-1"><CheckCircle size={12} /> Verified</span>
-                  </div>
+                  <span className="text-xs text-success flex items-center gap-1"><CheckCircle size={12} /> Verified</span>
                 </div>
               ))}
             </div>
@@ -261,7 +282,7 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* 3. All Users */}
+        {/* 3. Users */}
         <div className="card">
           <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleSection("users")}>
             <div className="font-medium text-sm">All Users ({users.length})</div>
@@ -275,17 +296,9 @@ export default function AdminDashboard() {
                     <div className="font-medium text-sm">{u.username}</div>
                     <div className="text-xs text-muted capitalize">{u.role}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`chip ${u.is_active ? "border-success text-success" : "border-danger text-danger"}`}>
-                      {u.is_active ? "Active" : "Deactivated"}
-                    </span>
-                    <button 
-                      onClick={() => handleToggleUser(u.id, u.is_active)} 
-                      className="text-xs px-2 py-1 border border-border rounded hover:bg-surface2"
-                    >
-                      {u.is_active ? "Deactivate" : "Activate"}
-                    </button>
-                  </div>
+                  <span className={`chip ${u.is_active ? "border-success text-success" : "border-danger text-danger"}`}>
+                    {u.is_active ? "Active" : "Deactivated"}
+                  </span>
                 </div>
               ))}
             </div>

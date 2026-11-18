@@ -1,12 +1,12 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    RegisterView, MeView, NotificationListView, 
+    RegisterView, MeView, NotificationListView,
     CustomTokenObtainPairView, PasswordResetRequestView,
     VerifyEmailView, ConfirmEmailChangeView, ConfirmLoginView,
-    AdminUserListView, ApproveMentorView, RejectMentorView, 
+    AdminUserListView, ApproveMentorView, RejectMentorView,
     DeactivateUserView, AdminRevenueView, BroadcastView,
-    MarkNotificationsReadView,
+    MarkNotificationsReadView,PlatformSettingsView, AdminToggleFindWriterView,
 )
 
 urlpatterns = [
@@ -20,7 +20,9 @@ urlpatterns = [
     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     path('confirm-email-change/', ConfirmEmailChangeView.as_view(), name='confirm-email-change'),
     path('confirm-login/', ConfirmLoginView.as_view(), name='confirm-login'),
-    
+    path('platform/settings/', PlatformSettingsView.as_view(), name='platform-settings'),
+    path('admin/toggle-find-writer/', AdminToggleFindWriterView.as_view(), name='admin-toggle-find-writer'),
+
     # Admin
     path('admin/users/', AdminUserListView.as_view(), name='admin-users'),
     path('admin/approve-mentor/<int:user_id>/', ApproveMentorView.as_view(), name='admin-approve-mentor'),
