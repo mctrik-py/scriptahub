@@ -68,36 +68,3 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} -> {self.user.email}"
-
-
-class SiteConfig(models.Model):
-    """Singleton row holding site-wide toggles controlled from the admin dashboard."""
-
-    find_writer_enabled = models.BooleanField(default=True)
-    find_writer_message = models.CharField(
-        max_length=255,
-        default="Find a Writer is coming soon. We'll notify you when it's live.",
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Site Configuration"
-        verbose_name_plural = "Site Configuration"
-
-    def __str__(self):
-        return f"SiteConfig (find_writer_enabled={self.find_writer_enabled})"
-
-    def save(self, *args, **kwargs):
-        self.pk = 1  # enforce single row
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def get_solo(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
-class PlatformSettings(models.Model):
-    find_writer_enabled = models.BooleanField(default=False)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Platform Settings (Find Writer: {self.find_writer_enabled})"

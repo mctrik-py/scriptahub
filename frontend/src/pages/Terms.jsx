@@ -1,4 +1,4 @@
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Terms() {
@@ -16,20 +16,7 @@ export default function Terms() {
 
         <div className="space-y-4 text-sm text-muted leading-relaxed">
           <h1 className="text-lg font-bold text-ink">ScriptaHub Terms of Service & Academic Integrity Policy</h1>
-          <p className="text-xs">Last Updated: November 2026 | Effective Date: November 2026</p>
-
-          {/* Prominent verification disclaimer */}
-          <div className="rounded-2xl border border-success/40 bg-success/10 p-4 flex gap-3">
-            <ShieldCheck className="text-success shrink-0 mt-0.5" size={20} />
-            <div>
-              <p className="font-semibold text-ink text-sm">Mentor Verification Disclaimer</p>
-              <p className="text-xs mt-1">
-                ScriptaHub only connects students with mentors who have passed strict identity,
-                credential, and background verification. We do not guarantee outcomes; students
-                remain responsible for their own academic work.
-              </p>
-            </div>
-          </div>
+          <p className="text-xs">Last Updated: October 2026 | Effective Date: October 2026</p>
 
           <h2 className="font-semibold text-ink mt-4">1. Introduction and Acceptance of Terms</h2>
           <p>Welcome to ScriptaHub ("the Platform"). These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and ScriptaHub regarding your access to and use of our services. By creating an account, accessing, or using the Platform in any manner, you acknowledge that you have read, understood, and agree to be bound by these Terms in their entirety. If you do not agree to these Terms, you must immediately cease all use of the Platform and its Services.</p>
@@ -53,7 +40,6 @@ export default function Terms() {
           <p><strong>3.2 Service Types:</strong> The Platform offers two primary engagement models: (1) "Find a Writer" where requests are broadcast to Public Mentors, and (2) "Write For Me" which is automatically routed to Company Professionals.</p>
           <p><strong>3.3 No Academic Institution Status:</strong> ScriptaHub is NOT an academic institution, does not grant degrees, and is not affiliated with any educational establishment. We do not guarantee academic outcomes.</p>
           <p><strong>3.4 Limitation of Liability:</strong> ScriptaHub acts solely as an intermediary. We are not responsible for the quality, accuracy, or completeness of any work exchanged between Users.</p>
-          <p><strong>3.5 Strict Mentor Verification:</strong> ScriptaHub connects Students only with Mentors who have undergone strict identity, credential, and background verification before being approved on the Platform. Approval is subject to Admin review and may be revoked at any time if a Mentor's information or conduct is found to be inconsistent with these Terms. Despite this verification, ScriptaHub does not guarantee academic outcomes; Students remain fully responsible for their own academic work and its submission.</p>
 
           <h2 className="font-semibold text-ink mt-4">4. Academic Integrity Policy (Zero Tolerance)</h2>
           <p><strong>4.1 Mentorship and Guidance Only:</strong> ScriptaHub operates strictly as a mentorship, guidance, and educational support platform.</p>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Home, Sparkles, Wallet, User, Lightbulb, ListTree, FileSearch, LogOut, RefreshCw, AlertCircle, X, Sun, Moon, PenTool, Users, BarChart, Code2, Search, Lock } from "lucide-react";
+import { Bell, Home, Sparkles, Wallet, User, Lightbulb, ListTree, FileSearch, LogOut, RefreshCw, AlertCircle, X, Sun, Moon, PenTool, Users, BarChart, Code2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -21,7 +21,9 @@ export default function StudentDashboard() {
   const [greeting, setGreeting] = useState("Good morning");
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
   const [notifCount, setNotifCount] = useState(0);
-  const [findWriterEnabled, setFindWriterEnabled] = useState(false);
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchInput, setShowSearchInput] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -36,9 +38,6 @@ export default function StudentDashboard() {
         const notifRes = await api.get("/auth/notifications/", { headers: { Authorization: `Bearer ${token}` } });
         const unread = notifRes.data.filter(n => !n.is_read).length;
         setNotifCount(unread);
-
-        const settingsRes = await api.get("/auth/platform/settings/", { headers: { Authorization: `Bearer ${token}` } });
-        setFindWriterEnabled(settingsRes.data.find_writer_enabled);
       } catch (err) {}
     };
     fetchData();
@@ -106,11 +105,12 @@ export default function StudentDashboard() {
     }
   };
 
-  const handleFindWriterClick = () => {
-    if (findWriterEnabled) {
-      navigate("/find-writer");
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/groups?q=${searchQuery}`);
     } else {
-      toast.error("Find a Writer is coming soon!");
+      navigate("/groups");
     }
   };
 
@@ -151,27 +151,10 @@ export default function StudentDashboard() {
           <h1 className="text-xl font-semibold mt-3">Your project</h1>
 
           <div className="grid grid-cols-2 gap-3 mt-4">
-            
-            {/* Find a Writer Button with Coming Soon Blur */}
-            <div className="relative">
-              <button 
-                onClick={handleFindWriterClick}
-                disabled={!findWriterEnabled}
-                className={`card-inner w-full h-full flex flex-col items-center justify-center gap-3 py-6 transition border-accent 
-                  ${findWriterEnabled ? "hover:opacity-80 cursor-pointer" : "blur-sm opacity-50 cursor-not-allowed"}`}
-              >
-                <Users size={28} className="text-accent" />
-                <span className="font-semibold text-sm">Find a Writer</span>
-              </button>
-              
-              {!findWriterEnabled && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <Lock size={20} className="text-white drop-shadow-md mb-1" />
-                  <span className="text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-md">Coming Soon</span>
-                </div>
-              )}
-            </div>
-
+            <button onClick={() => navigate("/find-writer")} className="card-inner flex flex-col items-center justify-center gap-3 py-6 hover:opacity-80 transition border-accent">
+              <Users size={28} className="text-accent" />
+              <span className="font-semibold text-sm">Find a Writer</span>
+            </button>
             <button onClick={() => navigate("/write-for-me")} className="card-inner flex flex-col items-center justify-center gap-3 py-6 hover:opacity-80 transition border-info">
               <PenTool size={28} className="text-info" />
               <span className="font-semibold text-sm">Write For Me</span>
@@ -271,12 +254,36 @@ export default function StudentDashboard() {
         </div>
       )}
       
+      {/* Bottom Nav with Integrated Search */}
       <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-border">
-        <div className="max-w-md mx-auto flex justify-around py-3">
-          <button onClick={() => navigate("/student/dashboard")} className="p-2 rounded-xl text-ink"><Home size={20} /></button>
-          <button onClick={() => navigate("/ai-chat")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Sparkles size={20} /></button>
-          <button onClick={() => navigate("/wallet")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Wallet size={20} /></button>
-          <button onClick={() => navigate("/profile")} className="p-2 rounded-xl text-muted hover:text-ink transition"><User size={20} /></button>
+        <div className="max-w-md mx-auto">
+          {/* Expanding Search Input */}
+          <div className={`transition-all duration-300 overflow-hidden ${showSearchInput ? "max-h-20 opacity-100" : "max-h-0 opacity-0"}`}>
+            <form onSubmit={handleSearchSubmit} className="flex gap-2 p-3 border-b border-border">
+              <input 
+                type="text" 
+                placeholder="Search groups..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-surface2 border border-border rounded-xl px-3 py-2 text-sm text-ink placeholder:text-neutral-500 focus:outline-none focus:border-accent" 
+                autoFocus
+              />
+              <button type="submit" className="btn-primary px-3 py-2 text-sm">
+                <Search size={14} />
+              </button>
+            </form>
+          </div>
+
+          {/* Nav Icons */}
+          <div className="flex justify-around py-3">
+            <button onClick={() => navigate("/student/dashboard")} className="p-2 rounded-xl text-ink"><Home size={20} /></button>
+            <button onClick={() => navigate("/ai-chat")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Sparkles size={20} /></button>
+            <button onClick={() => navigate("/wallet")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Wallet size={20} /></button>
+            <button onClick={() => setShowSearchInput(!showSearchInput)} className="p-2 rounded-xl text-muted hover:text-ink transition">
+              <Search size={20} />
+            </button>
+            <button onClick={() => navigate("/profile")} className="p-2 rounded-xl text-muted hover:text-ink transition"><User size={20} /></button>
+          </div>
         </div>
       </nav>
     </div>

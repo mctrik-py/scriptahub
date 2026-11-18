@@ -11,6 +11,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showVerify, setShowVerify] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -23,37 +25,57 @@ export default function Login() {
         role 
       });
 
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // Case 1: Verification required
+      if (res.data.verification_required) {
+        setShowVerify(true);
+        toast.success("Verification code sent to your email.");
+        return;
+      }
+
+      // Case 2: Tokens returned directly
       if (res.data.access && res.data.refresh) {
         localStorage.setItem("access", res.data.access);
         localStorage.setItem("refresh", res.data.refresh);
         
-        toast.success("Login successful!");
+        const userRole = res.data.role || role;
+        toast.success("Welcome back!");
         
-        // Force full reload to ensure tokens are read
-        if (role === "mentor") {
-          window.location.href = "/mentor/dashboard";
-        } else if (role === "admin") {
-          window.location.href = "/admin/dashboard";
-        } else {
-          window.location.href = "/student/dashboard";
-        }
-      } else {
-        toast.error("No tokens received.");
+        setTimeout(() => {
+          if (userRole === "admin") navigate("/admin/dashboard");
+          else if (userRole === "mentor") navigate("/mentor/dashboard");
+          else navigate("/student/dashboard");
+        }, 100);
+        return;
       }
+
+      toast.error("Unexpected response from server.");
     } catch (err) {
-      // Extract the exact error message from the backend
+      console.log("LOGIN ERROR:", err.response?.data);
       const detail = err.response?.data?.detail;
-      let errorMsg = "Invalid email or password";
-      
-      if (Array.isArray(detail) && detail.length > 0) {
-        errorMsg = detail[0];
-      } else if (typeof detail === "string") {
-        errorMsg = detail;
-      }
-      
+      const errorMsg = Array.isArray(detail) ? detail[0] : detail || "Invalid email or password";
       toast.error(errorMsg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyLogin = async () => {
+    try {
+      const res = await api.post("/auth/confirm-login/", { email, code: verifyCode });
+      localStorage.setItem("access", res.data.tokens.access);
+      localStorage.setItem("refresh", res.data.tokens.refresh);
+      
+      toast.success("Login successful!");
+      const userRole = res.data.role || role;
+      setTimeout(() => {
+        if (userRole === "admin") navigate("/admin/dashboard");
+        else if (userRole === "mentor") navigate("/mentor/dashboard");
+        else navigate("/student/dashboard");
+      }, 100);
+    } catch (err) {
+      toast.error("Invalid verification code.");
     }
   };
 
@@ -119,6 +141,18 @@ export default function Login() {
         </div>
         <p className="text-center text-muted text-sm mt-4">Don't have an account? <Link to="/signup" className="text-ink underline">Sign up</Link></p>
       </div>
+
+      {showVerify && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="card w-full max-w-md text-center">
+            <h2 className="text-xl font-semibold mb-2">Verify Login</h2>
+            <p className="text-sm text-muted mb-4">We sent a 6-digit code to <strong className="text-ink">{email}</strong>.</p>
+            <input type="text" value={verifyCode} onChange={(e) => setVerifyCode(e.target.value)} placeholder="123456" maxLength={6}
+              className="w-full text-center text-2xl tracking-widest bg-surface2 border border-border rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-accent mb-4" />
+            <button onClick={handleVerifyLogin} className="btn-primary w-full">Confirm Login</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
