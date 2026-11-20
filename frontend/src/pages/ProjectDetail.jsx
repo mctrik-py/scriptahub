@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Upload, FileText, Trash2, ExternalLink, Edit2, Sparkles, Users, Mic, RotateCcw, Play, Pause, X } from "lucide-react";
+import { ArrowLeft, Send, Upload, FileText, Trash2, ExternalLink, Edit2, Sparkles, Users, Mic, RotateCcw, Play, Pause, CheckCircle, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
 
+// Custom Audio Player Component
 const AudioPlayer = ({ src, isMe }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -15,13 +16,15 @@ const AudioPlayer = ({ src, isMe }) => {
     setIsPlaying(!isPlaying);
   };
 
+  const handleTimeUpdate = () => {
+    const current = audioRef.current.currentTime;
+    const duration = audioRef.current.duration || 1;
+    setProgress((current / duration) * 100);
+  };
+
   return (
     <div className={`flex items-center gap-3 py-1 min-w-[180px] ${isMe ? "text-white" : "text-ink"}`}>
-      <audio ref={audioRef} src={src} onTimeUpdate={() => {
-        const current = audioRef.current.currentTime;
-        const duration = audioRef.current.duration || 1;
-        setProgress((current / duration) * 100);
-      }} onEnded={() => setIsPlaying(false)} className="hidden" />
+      <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={() => setIsPlaying(false)} className="hidden" />
       <button onClick={togglePlay} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isMe ? "bg-white text-accent" : "bg-accent text-white"}`}>
         {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
       </button>
@@ -31,9 +34,7 @@ const AudioPlayer = ({ src, isMe }) => {
         ))}
         <div className={`absolute top-0 left-0 h-full pointer-events-none ${isMe ? "bg-white/80" : "bg-accent/80"} mix-blend-overlay`} style={{ width: `${progress}%` }} />
       </div>
-      <span className="text-[10px] opacity-70 w-8 text-right font-mono">
-        {audioRef.current ? Math.floor(audioRef.current.duration || 0) : 0}s
-      </span>
+      <span className="text-[10px] opacity-70 w-8 text-right font-mono">{audioRef.current ? Math.floor(audioRef.current.duration || 0) : 0}s</span>
     </div>
   );
 };
@@ -49,10 +50,12 @@ export default function ProjectDetail() {
   const [editText, setEditText] = useState("");
   const [groupList, setGroupList] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [showDocs, setShowDocs] = useState(false);
   
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
+  
+  const [showProfile, setShowProfile] = useState(false);
+  
   const chatEndRef = useRef(null);
 
   const fetchProject = async () => {
@@ -82,21 +85,14 @@ export default function ProjectDetail() {
     } catch (err) {}
   };
 
-  useEffect(() => { fetchProject(); }, [id]);
+  useEffect(() => {
+    fetchProject();
+  }, [id]);
+
   useEffect(() => {
     if (project) fetchGroups();
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [project]);
-
-  const handleReopen = async () => {
-    if (!window.confirm("Reopen this project?")) return;
-    try {
-      const token = localStorage.getItem("access");
-      await api.post(`/services/student/reopen/${id}/`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success("Project reopened!");
-      fetchProject();
-    } catch (err) { toast.error("Failed to reopen project."); }
-  };
 
   const startRecording = async () => {
     try {
@@ -105,14 +101,16 @@ export default function ProjectDetail() {
       const chunks = [];
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/mp4" });
-        const audioFile = new File([blob], `voice_note.mp4`, { type: "audio/mp4" });
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const audioFile = new File([blob], `voice_note.webm`, { type: "audio/webm" });
         setFile(audioFile);
       };
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
-    } catch (err) { toast.error("Microphone access denied."); }
+    } catch (err) {
+      toast.error("Microphone access denied.");
+    }
   };
 
   const stopRecording = () => {
@@ -131,7 +129,9 @@ export default function ProjectDetail() {
       await api.post(`/services/engagements/${id}/chat/`, { message }, { headers: { Authorization: `Bearer ${token}` } });
       setMessage("");
       fetchProject();
-    } catch (err) { toast.error("Failed to send message"); }
+    } catch (err) {
+      toast.error("Failed to send message");
+    }
   };
 
   const handleUpload = async (e) => {
@@ -147,7 +147,9 @@ export default function ProjectDetail() {
       toast.success("Sent!");
       setFile(null);
       fetchProject();
-    } catch (err) { toast.error("Upload failed."); }
+    } catch (err) {
+      toast.error("Upload failed.");
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -157,7 +159,9 @@ export default function ProjectDetail() {
       await api.delete(`/services/chat/${msgId}/`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Message deleted");
       fetchProject();
-    } catch (err) { toast.error("Failed to delete message"); }
+    } catch (err) {
+      toast.error("Failed to delete message");
+    }
   };
 
   const handleEditMessage = async (msgId) => {
@@ -169,7 +173,9 @@ export default function ProjectDetail() {
       setEditingMsg(null);
       setEditText("");
       fetchProject();
-    } catch (err) { toast.error("Failed to edit message"); }
+    } catch (err) {
+      toast.error("Failed to edit message");
+    }
   };
 
   const getStatusColor = (status) => {
@@ -212,41 +218,35 @@ export default function ProjectDetail() {
             <ArrowLeft size={24} />
           </button>
           
-          <div onClick={() => setShowDocs(true)} className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold cursor-pointer hover:bg-accent/30 transition">
-            {project.mentor_name ? project.mentor_name.charAt(0).toUpperCase() : "M"}
-          </div>
-          
-          <div className="flex-1 cursor-pointer" onClick={() => setShowDocs(true)}>
-            <h1 className="text-lg font-semibold truncate">{project.mentor_name || "Unassigned"}</h1>
-            <div className="text-xs text-muted flex items-center gap-1">
-              {formatLastSeen(project.mentor_last_active)} • <span className={`chip border ${getStatusColor(project.status)}`}>{project.status.replace("_", " ")}</span>
+          <div onClick={() => setShowProfile(true)} className="flex items-center gap-3 cursor-pointer flex-1">
+            <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">
+              {project.mentor_name ? project.mentor_name.charAt(0).toUpperCase() : "M"}
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <h1 className="text-lg font-semibold truncate">{project.mentor_name || "Unassigned"}</h1>
+                {project.mentor_name && project.mentor_name !== "Unassigned" && (
+                  <CheckCircle size={16} className="text-blue-500 shrink-0" fill="currentColor" />
+                )}
+              </div>
+              <div className="text-xs text-muted flex items-center gap-1">
+                {formatLastSeen(project.mentor_last_active)} • <span className={`chip border ${getStatusColor(project.status)}`}>{project.status.replace("_", " ")}</span>
+              </div>
             </div>
           </div>
-          
-          {project.status === "completed" && (
-            <button onClick={handleReopen} className="bg-surface2 border border-border text-xs text-ink px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-neutral-800 transition">
-              <RotateCcw size={14} /> Reopen
-            </button>
-          )}
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
           {project.messages.length === 0 ? (
-            <p className="text-sm text-muted text-center py-8">No messages yet.</p>
+            <p className="text-sm text-muted text-center py-8">No messages yet. Send a message to start!</p>
           ) : (
             project.messages.map((msg) => {
               const isMe = msg.sender_name === currentUser;
-              
               const isVoice = msg.message.startsWith("🎤 Voice note:");
-              const isRegularFile = msg.message.startsWith("📎 Sent a file:");
-              const isFile = isVoice || isRegularFile;
-              
-              // Extract filename from message string
+              const isFile = msg.message.startsWith("📎 Sent a file:") || isVoice;
               const fileName = isFile ? msg.message.split(":")[1].trim() : "";
-              
-              // Find the document matching the extracted filename
-              const doc = project.documents.find(d => d.original_name === fileName || fileName.includes(d.original_name));
+              const doc = project.documents.find(d => d.original_name === fileName);
 
               return (
                 <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"} relative group`}>
@@ -261,10 +261,9 @@ export default function ProjectDetail() {
                       </div>
                     ) : isVoice && doc ? (
                       <AudioPlayer src={doc.file} isMe={isMe} />
-                    ) : isRegularFile ? (
-                      // Always show filename if it's a regular file
-                      <a href={doc ? doc.file : "#"} target={doc ? "_blank" : "_self"} rel="noreferrer" className={`flex items-center gap-2 underline font-medium ${isMe ? "text-white" : "text-blue-400"}`}>
-                        <FileText size={16} /> {fileName} <ExternalLink size={12} />
+                    ) : isFile && doc ? (
+                      <a href={doc.file} target="_blank" rel="noreferrer" className={`flex items-center gap-2 underline ${isMe ? "text-white" : "text-blue-400"}`}>
+                        <FileText size={16} /> {doc.original_name} <ExternalLink size={12} />
                       </a>
                     ) : (
                       <div className="text-[15px] leading-snug">{msg.message}</div>
@@ -297,7 +296,7 @@ export default function ProjectDetail() {
           {file ? (
             <div className="flex-1 flex items-center justify-between text-sm text-ink py-2 bg-surface2 px-3 rounded-lg border border-border">
               <span className="truncate max-w-[150px] text-accent font-medium">
-                {file.name.endsWith(".mp4") || file.name.endsWith(".webm") || file.name.endsWith(".mp3") ? "Voice note ready" : file.name}
+                {file.name.endsWith(".webm") ? "Voice note ready" : file.name}
               </span>
               <button onClick={() => setFile(null)} className="text-red-400 text-xs px-2 hover:underline">Cancel</button>
             </div>
@@ -319,58 +318,64 @@ export default function ProjectDetail() {
             </button>
           )}
         </div>
+      </div>
 
-        {/* ONLY Groups below chat */}
-        <div className="card mt-6">
-          <div className="text-sm font-medium text-muted mb-3 flex items-center gap-2">
-            <Users size={16} /> Group Project
-          </div>
-          {groupList.length > 0 ? (
-            <div className="space-y-2 mb-3">
-              {groupList.map((g) => (
-                <div key={g.id} onClick={() => navigate(`/group/${g.id}`)} className="card-inner cursor-pointer hover:bg-surface2 flex justify-between items-center">
-                  <div>
-                    <div className="font-medium text-sm">{g.name}</div>
-                    <div className="text-xs text-muted">{g.members_count} members</div>
+      {/* Profile Modal */}
+      {showProfile && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="card w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowProfile(false)} className="absolute top-4 right-4 text-muted hover:text-ink">
+              <X size={20} />
+            </button>
+            <div className="flex flex-col items-center mb-6 mt-4">
+              <div className="w-20 h-20 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-3xl mb-3">
+                {project.mentor_name ? project.mentor_name.charAt(0).toUpperCase() : "M"}
+              </div>
+              <h2 className="text-xl font-bold flex items-center gap-1">
+                {project.mentor_name || "Unassigned"}
+                {project.mentor_name && project.mentor_name !== "Unassigned" && (
+                  <CheckCircle size={18} className="text-blue-500" fill="currentColor" />
+                )}
+              </h2>
+              <p className="text-xs text-muted mt-1">Verified Mentor</p>
+            </div>
+
+            {/* Groups Section */}
+            <div className="text-sm font-medium text-muted mb-3 border-t border-border pt-4">My Groups</div>
+            <div className="space-y-2 mb-4">
+              {groupList.length === 0 ? (
+                <p className="text-xs text-muted">No groups created yet.</p>
+              ) : (
+                groupList.map((g) => (
+                  <div key={g.id} onClick={() => navigate(`/group/${g.id}`)} className="card-inner cursor-pointer hover:bg-surface2 flex justify-between items-center">
+                    <div>
+                      <div className="font-medium text-sm">{g.name}</div>
+                      <div className="text-xs text-muted">{g.members_count} members</div>
+                    </div>
+                    <span className="text-xs text-muted">→</span>
                   </div>
-                  <span className="text-xs text-muted">→</span>
+                ))
+              )}
+            </div>
+
+            {/* Documents Section */}
+            <div className="text-sm font-medium text-muted mb-3 border-t border-border pt-4">Project Documents</div>
+            <div className="space-y-2 max-h-40 overflow-y-auto mb-4">
+              {project.documents.length === 0 ? <p className="text-xs text-muted">No documents uploaded yet.</p> : project.documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between gap-2 text-sm">
+                  <a href={doc.file} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline truncate flex-1 flex items-center gap-2">
+                    <FileText size={16} className="text-muted shrink-0" /> {doc.original_name || "Download File"}
+                  </a>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-xs text-muted mb-3">No groups yet for this project.</p>
-          )}
-          <button 
-            onClick={() => navigate(`/groups?engagement=${id}&mentor=${project.mentor_id || ""}&return=/project/${id}`)}
-            className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
-          >
-            <Users size={16} /> Create Group with Mentor
-          </button>
-        </div>
 
-      </div>
-
-      {/* Documents Modal */}
-      {showDocs && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="card w-full max-w-md relative max-h-[80vh] overflow-y-auto">
-            <button onClick={() => setShowDocs(false)} className="absolute top-4 right-4 text-muted hover:text-ink">
-              <X size={20} />
+            <button 
+              onClick={() => navigate(`/groups?engagement=${id}&mentor=${project.mentor_id || ""}&return=/project/${id}`)}
+              className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-2"
+            >
+              <Users size={16} /> Create Group with Mentor
             </button>
-            <h2 className="text-xl font-semibold mb-4">Project Documents</h2>
-            {project.documents.length === 0 ? (
-              <p className="text-sm text-muted">No documents uploaded yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {project.documents.map((doc) => (
-                  <div key={doc.id} className="card-inner flex items-center justify-between gap-2 text-sm">
-                    <a href={doc.file} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline truncate flex-1 flex items-center gap-2">
-                      <FileText size={16} className="text-muted shrink-0" /> {doc.original_name}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}

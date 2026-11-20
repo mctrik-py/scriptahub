@@ -1,36 +1,51 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Upload, FileText, Trash2, ExternalLink, Edit2, Mic, Play, Pause, X } from "lucide-react";
+import { ArrowLeft, Send, Upload, FileText, Trash2, ExternalLink, Edit2, Mic, Play, Pause, CheckCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
 
+// Custom Audio Player Component
 const AudioPlayer = ({ src, isMe }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
 
   const togglePlay = () => {
-    if (isPlaying) audioRef.current.pause();
-    else audioRef.current.play();
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
     setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    const current = audioRef.current.currentTime;
+    const duration = audioRef.current.duration || 1;
+    setProgress((current / duration) * 100);
   };
 
   return (
     <div className={`flex items-center gap-3 py-1 min-w-[180px] ${isMe ? "text-white" : "text-ink"}`}>
-      <audio ref={audioRef} src={src} onTimeUpdate={() => {
-        const current = audioRef.current.currentTime;
-        const duration = audioRef.current.duration || 1;
-        setProgress((current / duration) * 100);
-      }} onEnded={() => setIsPlaying(false)} className="hidden" />
+      <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={() => setIsPlaying(false)} className="hidden" />
       <button onClick={togglePlay} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isMe ? "bg-white text-accent" : "bg-accent text-white"}`}>
         {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
       </button>
+      
       <div className="flex-1 flex items-center gap-0.5 h-6 relative">
         {[...Array(20)].map((_, i) => (
-          <div key={i} className={`w-1 rounded-full ${isMe ? "bg-white/40" : "bg-accent/40"}`} style={{ height: `${Math.random() * 16 + 4}px` }} />
+          <div 
+            key={i} 
+            className={`w-1 rounded-full ${isMe ? "bg-white/40" : "bg-accent/40"}`} 
+            style={{ height: `${Math.random() * 16 + 4}px` }} 
+          />
         ))}
-        <div className={`absolute top-0 left-0 h-full pointer-events-none ${isMe ? "bg-white/80" : "bg-accent/80"} mix-blend-overlay`} style={{ width: `${progress}%` }} />
+        <div 
+          className={`absolute top-0 left-0 h-full pointer-events-none ${isMe ? "bg-white/80" : "bg-accent/80"} mix-blend-overlay`} 
+          style={{ width: `${progress}%` }} 
+        />
       </div>
+      
       <span className="text-[10px] opacity-70 w-8 text-right font-mono">
         {audioRef.current ? Math.floor(audioRef.current.duration || 0) : 0}s
       </span>
@@ -49,10 +64,10 @@ export default function MentorProjectDetail() {
   const [editingMsg, setEditingMsg] = useState(null);
   const [editText, setEditText] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
-  const [showDocs, setShowDocs] = useState(false);
   
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
+  
   const chatEndRef = useRef(null);
 
   const fetchProject = async () => {
@@ -66,12 +81,20 @@ export default function MentorProjectDetail() {
       });
       setProject(res.data);
       setStatusUpdate(res.data.status);
-    } catch (err) { toast.error("Failed to load project"); }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error("Failed to load project details");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchProject(); }, [id]);
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [project]);
+  useEffect(() => {
+    fetchProject();
+  }, [id]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [project]);
 
   const startRecording = async () => {
     try {
@@ -80,14 +103,16 @@ export default function MentorProjectDetail() {
       const chunks = [];
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/mp4" });
-        const audioFile = new File([blob], `voice_note.mp4`, { type: "audio/mp4" });
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const audioFile = new File([blob], `voice_note.webm`, { type: "audio/webm" });
         setFile(audioFile);
       };
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
-    } catch (err) { toast.error("Microphone access denied."); }
+    } catch (err) {
+      toast.error("Microphone access denied.");
+    }
   };
 
   const stopRecording = () => {
@@ -106,14 +131,18 @@ export default function MentorProjectDetail() {
       await api.post(`/services/engagements/${id}/chat/`, { message }, { headers: { Authorization: `Bearer ${token}` } });
       setMessage("");
       fetchProject();
-    } catch (err) { toast.error("Failed to send message"); }
+    } catch (err) {
+      toast.error("Failed to send message");
+    }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) return toast.error("Please select a file first");
+
     const formData = new FormData();
     formData.append("file", file);
+
     try {
       const token = localStorage.getItem("access");
       await api.post(`/services/engagements/${id}/upload/`, formData, {
@@ -122,7 +151,9 @@ export default function MentorProjectDetail() {
       toast.success("Sent!");
       setFile(null);
       fetchProject();
-    } catch (err) { toast.error("Upload failed."); }
+    } catch (err) {
+      toast.error("Upload failed.");
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -132,7 +163,9 @@ export default function MentorProjectDetail() {
       await api.delete(`/services/chat/${msgId}/`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Message deleted");
       fetchProject();
-    } catch (err) { toast.error("Failed to delete message"); }
+    } catch (err) {
+      toast.error("Failed to delete message");
+    }
   };
 
   const handleEditMessage = async (msgId) => {
@@ -144,7 +177,9 @@ export default function MentorProjectDetail() {
       setEditingMsg(null);
       setEditText("");
       fetchProject();
-    } catch (err) { toast.error("Failed to edit message"); }
+    } catch (err) {
+      toast.error("Failed to edit message");
+    }
   };
 
   const handleUpdateStatus = async (newStatus) => {
@@ -153,7 +188,9 @@ export default function MentorProjectDetail() {
       await api.post(`/services/mentor/update-status/${id}/`, { status: newStatus }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Project status updated!");
       fetchProject();
-    } catch (err) { toast.error("Failed to update status"); }
+    } catch (err) {
+      toast.error("Failed to update status");
+    }
   };
 
   const getStatusColor = (status) => {
@@ -178,18 +215,18 @@ export default function MentorProjectDetail() {
           <button onClick={() => navigate("/mentor/dashboard")} className="text-accent hover:text-white transition">
             <ArrowLeft size={24} />
           </button>
-          
-          <div onClick={() => setShowDocs(true)} className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold cursor-pointer hover:bg-accent/30 transition">
+          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">
             {project.student_name ? project.student_name.charAt(0).toUpperCase() : "S"}
           </div>
-          
-          <div className="flex-1 cursor-pointer" onClick={() => setShowDocs(true)}>
-            <h1 className="text-lg font-semibold truncate">{project.student_name || "Student"}</h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-1">
+              <h1 className="text-lg font-semibold truncate">{project.student_name || "Student"}</h1>
+              <CheckCircle size={16} className="text-blue-500 shrink-0" fill="currentColor" />
+            </div>
             <div className="text-xs text-muted flex items-center gap-1">
                <span className={`chip border ${getStatusColor(project.status)}`}>{project.status.replace("_", " ")}</span>
             </div>
           </div>
-          
           <select value={statusUpdate} onChange={(e) => { setStatusUpdate(e.target.value); handleUpdateStatus(e.target.value); }} className="bg-surface2 border border-border rounded-lg px-2 py-1 text-xs text-ink focus:outline-none">
             <option value="requested">Requested</option>
             <option value="in_progress">In Progress</option>
@@ -207,11 +244,10 @@ export default function MentorProjectDetail() {
               const isMe = msg.sender_name === currentUser;
               
               const isVoice = msg.message.startsWith("🎤 Voice note:");
-              const isRegularFile = msg.message.startsWith("📎 Sent a file:");
-              const isFile = isVoice || isRegularFile;
+              const isFile = msg.message.startsWith("📎 Sent a file:") || isVoice;
               
               const fileName = isFile ? msg.message.split(":")[1].trim() : "";
-              const doc = project.documents.find(d => d.original_name === fileName || fileName.includes(d.original_name));
+              const doc = project.documents.find(d => d.original_name === fileName);
 
               return (
                 <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"} relative group`}>
@@ -226,9 +262,9 @@ export default function MentorProjectDetail() {
                       </div>
                     ) : isVoice && doc ? (
                       <AudioPlayer src={doc.file} isMe={isMe} />
-                    ) : isRegularFile ? (
-                      <a href={doc ? doc.file : "#"} target={doc ? "_blank" : "_self"} rel="noreferrer" className={`flex items-center gap-2 underline font-medium ${isMe ? "text-white" : "text-blue-400"}`}>
-                        <FileText size={16} /> {fileName} <ExternalLink size={12} />
+                    ) : isFile && doc ? (
+                      <a href={doc.file} target="_blank" rel="noreferrer" className={`flex items-center gap-2 underline ${isMe ? "text-white" : "text-blue-400"}`}>
+                        <FileText size={16} /> {doc.original_name} <ExternalLink size={12} />
                       </a>
                     ) : (
                       <div className="text-[15px] leading-snug">{msg.message}</div>
@@ -261,7 +297,7 @@ export default function MentorProjectDetail() {
           {file ? (
             <div className="flex-1 flex items-center justify-between text-sm text-ink py-2 bg-surface2 px-3 rounded-lg border border-border">
               <span className="truncate max-w-[150px] text-accent font-medium">
-                {file.name.endsWith(".mp4") || file.name.endsWith(".webm") || file.name.endsWith(".mp3") ? "Voice note ready" : file.name}
+                {file.name.endsWith(".webm") ? "Voice note ready" : file.name}
               </span>
               <button onClick={() => setFile(null)} className="text-red-400 text-xs px-2 hover:underline">Cancel</button>
             </div>
@@ -284,31 +320,6 @@ export default function MentorProjectDetail() {
           )}
         </div>
       </div>
-
-      {/* Documents Modal */}
-      {showDocs && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="card w-full max-w-md relative max-h-[80vh] overflow-y-auto">
-            <button onClick={() => setShowDocs(false)} className="absolute top-4 right-4 text-muted hover:text-ink">
-              <X size={20} />
-            </button>
-            <h2 className="text-xl font-semibold mb-4">Project Documents</h2>
-            {project.documents.length === 0 ? (
-              <p className="text-sm text-muted">No documents uploaded yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {project.documents.map((doc) => (
-                  <div key={doc.id} className="card-inner flex items-center justify-between gap-2 text-sm">
-                    <a href={doc.file} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline truncate flex-1 flex items-center gap-2">
-                      <FileText size={16} className="text-muted shrink-0" /> {doc.original_name}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

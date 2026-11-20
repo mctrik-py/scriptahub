@@ -13,15 +13,28 @@ class Migration(migrations.Migration):
             database_operations=[
                 migrations.RunSQL(
                     sql="""
-                        ALTER TABLE accounts_platformsettings
-                        RENAME COLUMN find_writer_enabled
-                        TO is_find_writer_locked;
+                        DO $$
+                        BEGIN
+                            IF EXISTS (
+                                SELECT 1
+                                FROM information_schema.columns
+                                WHERE table_name = 'accounts_platformsettings'
+                                AND column_name = 'find_writer_enabled'
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM information_schema.columns
+                                WHERE table_name = 'accounts_platformsettings'
+                                AND column_name = 'is_find_writer_locked'
+                            )
+                            THEN
+                                ALTER TABLE accounts_platformsettings
+                                RENAME COLUMN find_writer_enabled
+                                TO is_find_writer_locked;
+                            END IF;
+                        END $$;
                     """,
-                    reverse_sql="""
-                        ALTER TABLE accounts_platformsettings
-                        RENAME COLUMN is_find_writer_locked
-                        TO find_writer_enabled;
-                    """
+                    reverse_sql=migrations.RunSQL.noop,
                 ),
             ],
             state_operations=[],

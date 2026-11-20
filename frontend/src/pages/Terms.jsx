@@ -16,7 +16,7 @@ export default function Terms() {
 
         <div className="space-y-4 text-sm text-muted leading-relaxed">
           <h1 className="text-lg font-bold text-ink">ScriptaHub Terms of Service & Academic Integrity Policy</h1>
-          <p className="text-xs">Last Updated: October 2026 | Effective Date: October 2026</p>
+          <p className="text-xs">Last Updated: November 2026 | Effective Date: November 2026</p>
 
           <h2 className="font-semibold text-ink mt-4">1. Introduction and Acceptance of Terms</h2>
           <p>Welcome to ScriptaHub ("the Platform"). These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and ScriptaHub regarding your access to and use of our services. By creating an account, accessing, or using the Platform in any manner, you acknowledge that you have read, understood, and agree to be bound by these Terms in their entirety. If you do not agree to these Terms, you must immediately cease all use of the Platform and its Services.</p>
@@ -42,10 +42,11 @@ export default function Terms() {
           <p><strong>3.4 Limitation of Liability:</strong> ScriptaHub acts solely as an intermediary. We are not responsible for the quality, accuracy, or completeness of any work exchanged between Users.</p>
 
           <h2 className="font-semibold text-ink mt-4">4. Academic Integrity Policy (Zero Tolerance)</h2>
-          <p><strong>4.1 Mentorship and Guidance Only:</strong> ScriptaHub operates strictly as a mentorship, guidance, and educational support platform.</p>
-          <p><strong>4.2 Prohibited Conduct:</strong> The following are strictly prohibited: Ghostwriting (writing full chapters/theses for submission), Academic Fraud, Submission of Purchased Work, and Contract Cheating.</p>
-          <p><strong>4.3 Permitted Services:</strong> Reviewing drafts, explaining concepts, debugging code, guiding methodology, providing examples, and assisting with data analysis interpretation.</p>
-          <p><strong>4.4 Consequences:</strong> Violation will result in permanent account termination without refund. ScriptaHub reserves the right to report misconduct to educational institutions.</p>
+          <p><strong>4.1 Mentorship and Guidance Only:</strong> ScriptaHub operates strictly as a mentorship, guidance, and educational support platform. We only match students with verified mentors under strict conditions.</p>
+          <p><strong>4.2 We Do Not Take Over Full Projects:</strong> All services are intended to assist Users in developing their own skills, understanding, and original work. Mentors will provide guidance, code review, and debugging support, but they will <strong>not</strong> write or complete your thesis, assignments, or projects on your behalf. You remain the primary author of your work.</p>
+          <p><strong>4.3 Prohibited Conduct:</strong> The following are strictly prohibited: Ghostwriting (writing full chapters/theses for submission), Academic Fraud, Submission of Purchased Work, and Contract Cheating.</p>
+          <p><strong>4.4 Permitted Services:</strong> Reviewing drafts, explaining concepts, debugging code, guiding methodology, providing examples, and assisting with data analysis interpretation.</p>
+          <p><strong>4.5 Consequences:</strong> Violation will result in permanent account termination without refund. ScriptaHub reserves the right to report misconduct to educational institutions.</p>
 
           <h2 className="font-semibold text-ink mt-4">5. Payments, Escrow, and Fees</h2>
           <p><strong>5.1 Escrow System:</strong> All Project funds must be deposited into escrow before work commences.</p>
@@ -77,7 +78,7 @@ export default function Terms() {
 
           <h2 className="font-semibold text-ink mt-4">10. Mentor-Specific Terms</h2>
           <p><strong>10.1 Code of Conduct:</strong> No Ghostwriting, strict Confidentiality, Originality of guidance, and Professionalism.</p>
-          <p><strong>10.2 Verification:</strong> Submit valid credentials for Admin review before accepting Projects.</p>
+          <p><strong>10.2 Verification:</strong> Submit valid credentials for Admin review before accepting Projects. Company Professionals are automatically verified but held to the same strict support-only policy.</p>
           <p><strong>10.3 Commission:</strong> ScriptaHub deducts a 10% commission fee from the total Project value upon acceptance.</p>
           <p><strong>10.4 Independent Contractor:</strong> Mentors are independent contractors, not employees of ScriptaHub.</p>
 
@@ -100,7 +101,7 @@ export default function Terms() {
           <p>Email: support@scriptahub.com<br/>Website: www.scriptahub.com</p>
 
           <h2 className="font-semibold text-ink mt-4">17. Acknowledgment</h2>
-          <p className="font-medium text-ink">BY CREATING AN ACCOUNT, ACCESSING, OR USING THE SCRIPTAHUB PLATFORM, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS OF SERVICE AND THE ACADEMIC INTEGRITY POLICY.</p>
+          <p className="font-medium text-ink">BY CREATING AN ACCOUNT, ACCESSING, OR USING THE SCRIPTAHUB PLATFORM, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS OF SERVICE AND THE ACADEMIC INTEGRITY POLICY, INCLUDING THE STRICT MENTORSHIP AND SUPPORT-ONLY POLICY.</p>
         </div>
       </div>
     </div>
