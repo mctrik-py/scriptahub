@@ -562,14 +562,20 @@ class GroupListByProjectView(APIView):
             engagement = Engagement.objects.get(id=engagement_id)
             if engagement.student != request.user and engagement.mentor != request.user:
                 return Response({"error": "Unauthorized"}, status=403)
+            
+            # Fetch all groups the student is an admin of OR a member of
             groups = Group.objects.filter(
-                admin=engagement.student,
-                member_requests__student=engagement.mentor,
+                member_requests__student=engagement.student,
                 member_requests__status=GroupMember.Status.APPROVED
-            )
+            ).distinct()
+            
             result = []
             for g in groups:
-                result.append({"id": g.id, "name": g.name, "members_count": g.member_requests.filter(status=GroupMember.Status.APPROVED).count()})
+                result.append({
+                    "id": g.id, 
+                    "name": g.name, 
+                    "members_count": g.member_requests.filter(status=GroupMember.Status.APPROVED).count()
+                })
             return Response(result)
         except Engagement.DoesNotExist:
             return Response({"error": "Project not found"}, status=404)

@@ -6,7 +6,7 @@ from .views import (
     VerifyEmailView, ConfirmEmailChangeView, ConfirmLoginView,
     AdminUserListView, ApproveMentorView, RejectMentorView, 
     DeactivateUserView, AdminRevenueView, BroadcastView,
-    MarkNotificationsReadView,
+    MarkNotificationsReadView, PlatformSettingsView, ToggleFindWriterLockView,
 )
 
 urlpatterns = [
@@ -28,4 +28,8 @@ urlpatterns = [
     path('admin/deactivate-user/<int:user_id>/', DeactivateUserView.as_view(), name='admin-deactivate-user'),
     path('admin/revenue/', AdminRevenueView.as_view(), name='admin-revenue'),
     path('admin/broadcast/', BroadcastView.as_view(), name='admin-broadcast'),
+    
+    # Platform Settings (Lock) - Note the 'admin/' prefix
+    path('admin/platform-settings/', PlatformSettingsView.as_view(), name='platform-settings'),
+    path('admin/toggle-find-writer/', ToggleFindWriterLockView.as_view(), name='toggle-find-writer'),
 ]

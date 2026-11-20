@@ -68,3 +68,8 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} -> {self.user.email}"
+class PlatformSettings(models.Model):
+    is_find_writer_locked = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "Platform Settings"
