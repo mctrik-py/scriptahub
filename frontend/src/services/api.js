@@ -1,7 +1,7 @@
 
 import axios from "axios";
 
-const BASE_URL = "https://scriptahub-backend.onrender.com/api";
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,

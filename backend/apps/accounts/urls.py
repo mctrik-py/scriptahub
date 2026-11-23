@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView, MeView, NotificationListView, 
-    CustomTokenObtainPairView, PasswordResetRequestView,
+    CustomTokenObtainPairView, PasswordResetRequestView, PasswordResetConfirmView,
     VerifyEmailView, ConfirmEmailChangeView, ConfirmLoginView,
     AdminUserListView, ApproveMentorView, RejectMentorView, 
     DeactivateUserView, AdminRevenueView, BroadcastView,
@@ -17,6 +17,7 @@ urlpatterns = [
     path('notifications/', NotificationListView.as_view(), name='notifications'),
     path('notifications/mark-read/', MarkNotificationsReadView.as_view(), name='mark-notifications-read'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
+    path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     path('confirm-email-change/', ConfirmEmailChangeView.as_view(), name='confirm-email-change'),
     path('confirm-login/', ConfirmLoginView.as_view(), name='confirm-login'),
@@ -29,7 +30,7 @@ urlpatterns = [
     path('admin/revenue/', AdminRevenueView.as_view(), name='admin-revenue'),
     path('admin/broadcast/', BroadcastView.as_view(), name='admin-broadcast'),
     
-    # Platform Settings (Lock) - Note the 'admin/' prefix
+    # Platform Settings (Lock)
     path('admin/platform-settings/', PlatformSettingsView.as_view(), name='platform-settings'),
     path('admin/toggle-find-writer/', ToggleFindWriterLockView.as_view(), name='toggle-find-writer'),
 ]

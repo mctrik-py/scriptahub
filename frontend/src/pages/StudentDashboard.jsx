@@ -181,12 +181,19 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div onClick={() => navigate("/my-projects")} className="card cursor-pointer hover:opacity-80 transition flex items-center justify-between">
+        {/* My Projects with Red Notification Badge */}
+        <div onClick={() => navigate("/my-projects")} className="card cursor-pointer hover:opacity-80 transition flex items-center justify-between relative">
           <div>
             <div className="text-sm font-medium">My Projects</div>
             <div className="text-xs text-muted mt-1">View your active and past jobs</div>
           </div>
           <AlertCircle size={20} className="text-accent" />
+          
+          {notifCount > 0 && (
+            <span className="absolute top-3 right-3 bg-danger text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {notifCount}
+            </span>
+          )}
         </div>
 
         <div onClick={() => navigate("/complaint")} className="card cursor-pointer hover:opacity-80 transition flex items-center justify-between">
@@ -254,10 +261,9 @@ export default function StudentDashboard() {
         </div>
       )}
       
-      {/* Bottom Nav with Integrated Search */}
+      {/* Bottom Nav with Search Icon */}
       <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-border">
         <div className="max-w-md mx-auto">
-          {/* Expanding Search Input */}
           <div className={`transition-all duration-300 overflow-hidden ${showSearchInput ? "max-h-20 opacity-100" : "max-h-0 opacity-0"}`}>
             <form onSubmit={handleSearchSubmit} className="flex gap-2 p-3 border-b border-border">
               <input 
@@ -274,14 +280,13 @@ export default function StudentDashboard() {
             </form>
           </div>
 
-          {/* Nav Icons */}
           <div className="flex justify-around py-3">
             <button onClick={() => navigate("/student/dashboard")} className="p-2 rounded-xl text-ink"><Home size={20} /></button>
             <button onClick={() => navigate("/ai-chat")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Sparkles size={20} /></button>
-            <button onClick={() => navigate("/wallet")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Wallet size={20} /></button>
             <button onClick={() => setShowSearchInput(!showSearchInput)} className="p-2 rounded-xl text-muted hover:text-ink transition">
               <Search size={20} />
             </button>
+            <button onClick={() => navigate("/wallet")} className="p-2 rounded-xl text-muted hover:text-ink transition"><Wallet size={20} /></button>
             <button onClick={() => navigate("/profile")} className="p-2 rounded-xl text-muted hover:text-ink transition"><User size={20} /></button>
           </div>
         </div>

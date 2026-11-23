@@ -247,6 +247,7 @@ export default function ProjectDetail() {
               const isFile = msg.message.startsWith("📎 Sent a file:") || isVoice;
               const fileName = isFile ? msg.message.split(":")[1].trim() : "";
               const doc = project.documents.find(d => d.original_name === fileName);
+              const isImage = fileName.match(/\.(jpeg|jpg|gif|png)$/) != null;
 
               return (
                 <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"} relative group`}>
@@ -259,6 +260,8 @@ export default function ProjectDetail() {
                         <button onClick={() => handleEditMessage(msg.id)} className="text-xs bg-green-600 px-2 py-1 rounded">Save</button>
                         <button onClick={() => setEditingMsg(null)} className="text-xs bg-white/20 px-2 py-1 rounded">Cancel</button>
                       </div>
+                    ) : isImage && doc ? (
+                      <img src={doc.file} alt="sent" className="max-w-full rounded-lg mt-1" />
                     ) : isVoice && doc ? (
                       <AudioPlayer src={doc.file} isMe={isMe} />
                     ) : isFile && doc ? (
@@ -323,7 +326,7 @@ export default function ProjectDetail() {
       {/* Profile Modal */}
       {showProfile && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="card w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+          <div className="card w-full max-w-md relative">
             <button onClick={() => setShowProfile(false)} className="absolute top-4 right-4 text-muted hover:text-ink">
               <X size={20} />
             </button>
@@ -340,27 +343,8 @@ export default function ProjectDetail() {
               <p className="text-xs text-muted mt-1">Verified Mentor</p>
             </div>
 
-            {/* Groups Section */}
-            <div className="text-sm font-medium text-muted mb-3 border-t border-border pt-4">My Groups</div>
-            <div className="space-y-2 mb-4">
-              {groupList.length === 0 ? (
-                <p className="text-xs text-muted">No groups created yet.</p>
-              ) : (
-                groupList.map((g) => (
-                  <div key={g.id} onClick={() => navigate(`/group/${g.id}`)} className="card-inner cursor-pointer hover:bg-surface2 flex justify-between items-center">
-                    <div>
-                      <div className="font-medium text-sm">{g.name}</div>
-                      <div className="text-xs text-muted">{g.members_count} members</div>
-                    </div>
-                    <span className="text-xs text-muted">→</span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Documents Section */}
             <div className="text-sm font-medium text-muted mb-3 border-t border-border pt-4">Project Documents</div>
-            <div className="space-y-2 max-h-40 overflow-y-auto mb-4">
+            <div className="space-y-2 max-h-40 overflow-y-auto">
               {project.documents.length === 0 ? <p className="text-xs text-muted">No documents uploaded yet.</p> : project.documents.map((doc) => (
                 <div key={doc.id} className="flex items-center justify-between gap-2 text-sm">
                   <a href={doc.file} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline truncate flex-1 flex items-center gap-2">
@@ -372,7 +356,7 @@ export default function ProjectDetail() {
 
             <button 
               onClick={() => navigate(`/groups?engagement=${id}&mentor=${project.mentor_id || ""}&return=/project/${id}`)}
-              className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-2"
+              className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-6"
             >
               <Users size={16} /> Create Group with Mentor
             </button>

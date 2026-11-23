@@ -179,10 +179,46 @@ class MarkNotificationsReadView(APIView):
         request.user.notifications.filter(is_read=False).update(is_read=True)
         return Response({"status": "success"})
 
+# --- PASSWORD RESET VIEWS ---
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
-        return Response({"message": "If this email exists, a reset link has been sent."})
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(email=email)
+            # Generate a 6-digit code
+            code = ''.join(random.choices(string.digits, k=6))
+            user.verification_code = code
+            user.save()
+
+            send_mail(
+                'ScriptaHub - Password Reset Code',
+                f'Your password reset code is: {code}\n\nIf you did not request this, ignore this email.',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=True,
+            )
+            return Response({"message": "Reset code sent."})
+        except User.DoesNotExist:
+            return Response({"message": "If this email exists, a code has been sent."})
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        email = request.data.get("email")
+        code = request.data.get("code")
+        new_password = request.data.get("new_password")
+
+        try:
+            user = User.objects.get(email=email)
+            if user.verification_code == code:
+                user.set_password(new_password)
+                user.verification_code = None
+                user.save()
+                return Response({"message": "Password reset successful."})
+            return Response({"error": "Invalid code."}, status=400)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
 
 # --- ADMIN VIEWS ---
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -270,13 +306,13 @@ class BroadcastView(APIView):
 
 # --- PLATFORM SETTINGS VIEWS ---
 class PlatformSettingsView(APIView):
-    permission_classes = [AllowAny] # Allow students to read the lock status
+    permission_classes = [AllowAny] 
     def get(self, request):
         settings_obj, _ = PlatformSettings.objects.get_or_create(id=1)
         return Response({"is_find_writer_locked": settings_obj.is_find_writer_locked})
 
 class ToggleFindWriterLockView(APIView):
-    permission_classes = [IsAdminUser] # Only admin can toggle
+    permission_classes = [IsAdminUser]
     def post(self, request):
         settings_obj, _ = PlatformSettings.objects.get_or_create(id=1)
         settings_obj.is_find_writer_locked = not settings_obj.is_find_writer_locked

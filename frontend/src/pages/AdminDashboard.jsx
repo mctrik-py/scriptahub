@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldCheck, LogOut, ChevronDown, ChevronUp, DollarSign, Megaphone, FileText, Lock, Unlock, CheckCircle } from "lucide-react";
+import { ShieldCheck, LogOut, ChevronDown, ChevronUp, DollarSign, Megaphone, Lock, Unlock, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
 
@@ -54,6 +54,17 @@ export default function AdminDashboard() {
       toast.success(res.data.is_find_writer_locked ? "Find a Writer locked" : "Find a Writer unlocked");
     } catch (err) {
       toast.error("Failed to toggle lock");
+    }
+  };
+
+  const handleToggleUser = async (id) => {
+    try {
+      const token = localStorage.getItem("access");
+      await api.post(`/auth/admin/deactivate-user/${id}/`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success("User status toggled");
+      fetchData();
+    } catch (err) {
+      toast.error("Failed to toggle user");
     }
   };
 
@@ -141,7 +152,6 @@ export default function AdminDashboard() {
   if (loading) return <div className="min-h-screen bg-bg p-8 text-center text-muted">Loading Admin...</div>;
 
   const pendingMentors = users.filter(u => u.role === "mentor" && !u.is_verified && !u.is_rejected);
-  const rejectedMentors = users.filter(u => u.role === "mentor" && u.is_rejected);
   const approvedMentors = users.filter(u => u.role === "mentor" && u.is_verified);
 
   return (
@@ -157,7 +167,7 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Stats (Moved to top) */}
+        {/* 1. Revenue Cards (Top) */}
         <div className="grid grid-cols-2 gap-3">
           <div className="card border-success">
             <div className="text-xs text-muted flex items-center gap-1"><DollarSign size={12}/> Total Escrow</div>
@@ -169,15 +179,41 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Find Writer Lock Control (Moved below Stats) */}
+        {/* 2. Find Writer Lock (Below Revenue) */}
         <div className="card flex justify-between items-center border-warn">
           <div>
             <div className="font-medium text-sm">Find a Writer Lock</div>
-            <div className="text-xs text-muted">Lock or unlock the feature for students</div>
+            <div className="text-xs text-muted">Lock or unlock for students</div>
           </div>
           <button onClick={handleToggleLock} className={`p-3 rounded-xl transition ${isLocked ? "bg-danger text-white" : "bg-success text-white"}`}>
             {isLocked ? <Lock size={20} /> : <Unlock size={20} />}
           </button>
+        </div>
+
+        {/* 3. All Members */}
+        <div className="card">
+          <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleSection("users")}>
+            <div className="font-medium text-sm">All Members ({users.length})</div>
+            {openSection === "users" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+          {openSection === "users" && (
+            <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
+              {users.map(u => (
+                <div key={u.id} className="card-inner flex justify-between items-center">
+                  <div>
+                    <div className="font-medium text-sm">{u.username}</div>
+                    <div className="text-xs text-muted capitalize">{u.role}</div>
+                  </div>
+                  <button 
+                    onClick={() => handleToggleUser(u.id)} 
+                    className={`text-xs px-2 py-1 rounded border ${u.is_active ? "border-danger text-danger" : "border-success text-success"}`}
+                  >
+                    {u.is_active ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Pending Mentors */}
