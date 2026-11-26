@@ -10,7 +10,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-123")
 DEBUG = os.getenv("DEBUG", "True") == "True"
-
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
@@ -65,26 +64,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ---- DATABASE (FORCED FOR RAILWAY) ----
-# If DATABASE_URL exists (Railway), use it. Otherwise, fall back to localhost.
-DATABASE_URL = os.getenv("DATABASE_URL")
+# ---- DATABASE ----
+# Railway injects DATABASE_URL automatically. Locally, it uses your XAMPP/local Postgres.
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:5432/thesishub")
 
-if DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
-    }
-else:
-    # Fallback for local development
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": "thesishub",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "HOST": "127.0.0.1",
-            "PORT": "5432",
-        }
-    }
+DATABASES = {
+    "default": dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
