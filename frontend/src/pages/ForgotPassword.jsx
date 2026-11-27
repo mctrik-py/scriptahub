@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { ArrowLeft, KeyRound, CheckCircle } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
 
@@ -9,25 +9,28 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRequest = async (e) => {
+  const handleRequestCode = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Send request
       await api.post("/auth/password-reset/", { email });
-      toast.success("Reset code sent to your email");
-      setStep(2);
+      
+      // If we get here, it worked
+      toast.success("Reset code sent to your email.");
+      setStep(2); // Move to step 2
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to send code");
+      const errorMsg = err.response?.data?.error || "Failed to send reset code.";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReset = async (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -36,10 +39,11 @@ export default function ForgotPassword() {
         code, 
         new_password: newPassword 
       });
-      toast.success("Password reset successfully! Please log in.");
+      toast.success("Password reset successful! Please log in.");
       navigate("/login");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Invalid code. Please try again.");
+      const errorMsg = err.response?.data?.error || "Invalid code or failed to reset password.";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -48,25 +52,28 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4 relative">
       <div className="card w-full max-w-md relative">
-        <button 
-          onClick={() => step === 1 ? navigate("/login") : setStep(1)} 
-          className="absolute top-6 left-6 text-muted hover:text-ink"
-        >
+        <button onClick={() => navigate("/login")} className="absolute top-6 left-6 text-muted hover:text-ink">
           <ArrowLeft size={20} />
         </button>
-
-        <div className="text-center mt-4 mb-6">
-          <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <KeyRound size={24} className="text-accent" />
-          </div>
-          <h1 className="text-xl font-semibold">Reset Password</h1>
-          <p className="text-xs text-muted mt-1">
-            {step === 1 ? "Enter your email to receive a 6-digit code" : "Enter the code and your new password"}
-          </p>
+        
+        <div className="text-center mt-4">
+          {step === 1 ? (
+            <>
+              <KeyRound size={40} className="text-accent mx-auto mb-4" />
+              <h1 className="text-2xl font-semibold">Reset Password</h1>
+              <p className="text-muted text-sm mt-1">Enter your email to receive a reset code.</p>
+            </>
+          ) : (
+            <>
+              <CheckCircle size={40} className="text-success mx-auto mb-4" />
+              <h1 className="text-2xl font-semibold">Enter Reset Code</h1>
+              <p className="text-muted text-sm mt-1">We sent a 6-digit code to <strong className="text-ink">{email}</strong></p>
+            </>
+          )}
         </div>
 
         {step === 1 ? (
-          <form onSubmit={handleRequest} className="space-y-3">
+          <form onSubmit={handleRequestCode} className="mt-6 space-y-3">
             <label className="block">
               <span className="text-xs text-muted">Email</span>
               <input 
@@ -74,7 +81,7 @@ export default function ForgotPassword() {
                 required 
                 placeholder="you@example.com" 
                 value={email} 
-                onChange={e => setEmail(e.target.value)} 
+                onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-accent" 
               />
             </label>
@@ -83,42 +90,32 @@ export default function ForgotPassword() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleReset} className="space-y-3">
+          <form onSubmit={handleResetPassword} className="mt-6 space-y-3">
             <label className="block">
-              <span className="text-xs text-muted">6-digit Code</span>
+              <span className="text-xs text-muted">6-Digit Code</span>
               <input 
                 type="text" 
                 required 
-                maxLength={6}
                 placeholder="123456" 
+                maxLength={6} 
                 value={code} 
-                onChange={e => setCode(e.target.value)} 
-                className="mt-1 w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-ink text-center tracking-widest text-lg focus:outline-none focus:border-accent" 
+                onChange={(e) => setCode(e.target.value)}
+                className="mt-1 w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-ink text-center tracking-widest text-xl focus:outline-none focus:border-accent" 
               />
             </label>
             <label className="block">
               <span className="text-xs text-muted">New Password</span>
-              <div className="relative mt-1">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  required 
-                  minLength={8}
-                  placeholder="Min 8 characters" 
-                  value={newPassword} 
-                  onChange={e => setNewPassword(e.target.value)} 
-                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 pr-12 text-ink focus:outline-none focus:border-accent" 
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 text-muted hover:text-ink"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              <input 
+                type="password" 
+                required 
+                placeholder="Min 8 characters" 
+                value={newPassword} 
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="mt-1 w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-accent" 
+              />
             </label>
-            <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
-              {loading ? "Resetting..." : "Reset Password"}
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? "Resetting..." : "Set New Password"}
             </button>
           </form>
         )}
